@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical" 
+    android:background="@drawable/mu_list_bg_selector" ><!-- item背景色变换 -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="left"
+        android:textSize="23sp"
+        android:singleLine="true"
+        android:duplicateParentState="true"
+        android:textColor="@drawable/mu_list_item_text_selector" 
+        />
+	<!-- item文字颜色变换 -->
+</LinearLayout>

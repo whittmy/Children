@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<set xmlns:android="http://schemas.android.com/apk/res/android">  
+    <rotate  
+        android:fromDegrees="0"  
+        android:toDegrees="359"  
+        android:duration="20000"  
+        android:repeatCount="-1"  
+        android:pivotX="50%"  
+        android:pivotY="50%" />  
+        <!-- 
+        android:repeatCount="-1"即表示循环运行，配合上android:fromDegrees="0" android:toDegrees="360"表示不间断
+        
+         -->
+</set>
+
+
+
+<!-- 
+	图片旋转效果，使用代码如下
+
+<?xml version="1.0" encoding="utf-8"?>  
+<LinearLayout  
+    xmlns:android="http://schemas.android.com/apk/res/android"  
+    android:layout_width="match_parent"  
+    android:layout_height="match_parent">  
+    <ImageView  
+        android:id="@+id/infoOperating"  
+        android:layout_width="wrap_content"  
+        android:layout_height="wrap_content"  
+        android:src="@drawable/operating"  
+        android:scaleType="center">  
+        </ImageView>  
+</LinearLayout>  
+
+
+ImageView mImgDisc = (ImageView)findViewById(R.id.infoOperating);  
+Animation mAnimDisc = AnimationUtils.loadAnimation(this, R.anim.disc);  
+LinearInterpolator lin = new LinearInterpolator();  
+mAnimDisc.setInterpolator(lin);  
+
+//start
+if (mAnimDisc != null) {  
+    mImgDisc.startAnimation(mAnimDisc);  
+}  
+
+//stop
+mImgDisc.clearAnimation();  
+
+
+//解决屏幕旋转导致中心偏移问题
+@Override  
+public void onConfigurationChanged(Configuration newConfig) {  
+  
+    super.onConfigurationChanged(newConfig);  
+  
+    if (mAnimDisc != null && mImgDisc != null && mAnimDisc.hasStarted()) {  
+        mImgDisc.clearAnimation();  
+        mImgDisc.startAnimation(mAnimDisc);  
+    }  
+} 
+
+
+
+ -->

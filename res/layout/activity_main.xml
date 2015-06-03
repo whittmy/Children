@@ -1,0 +1,22 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:orientation="vertical" 
+    android:gravity="center">
+
+  <Button android:id="@+id/btn_audio"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="音频测试"
+      android:textColor="#000000"
+      android:textSize="25sp"/>
+    <Button android:id="@+id/btn_video"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="视频测试"
+      android:textColor="#000000"
+      android:layout_marginTop="20dp"
+      android:textSize="25sp"/>
+</LinearLayout>

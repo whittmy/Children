@@ -24,12 +24,12 @@ public class Configer {
 
 		case TYPE_QUICK_ENTRY_TEST:
 			rt = "http://10.0.2.2/ci/erge.php/erge/api/getPL/";
-			rt = "http://172.16.2.7/ci/erge.php/erge/api/getPL/";
+			rt = "http://www.nybgjd.com/erge/api/getPL/";
 			
 			break;
 		case TYPE_QUICK_ENTRY_TESTA:
 			rt = "http://10.0.2.2/ci/erge.php/erge/api/getPL/a/";
-			rt = "http://172.16.2.7/ci/erge.php/erge/api/getPL/a/";
+			rt = "http://www.nybgjd.com/erge/api/getPL/a/";
 			break;			
 		}
 		return rt;
@@ -75,7 +75,15 @@ public class Configer {
 		//Service
 		public static final String SVR_CTL_ACTION = "com.wwj.action.CTL_ACTION";		//控制动作 参数：listPosition, MSG, progress;
 		public static final String SVR_SHOW_LRC = "com.wwj.action.SHOW_LRC";			//通知显示歌词
-		public static final String SVR_GET_NEWPG = "com.wwj.action GET_NEWPG";		//取新页面		
+		public static final String SVR_GET_NEWPG = "com.wwj.action.GET_NEWPG";		//取新页面		
+		
+		//Video
+		public static final String MV_CTL_PLAY = "com.wwj.action.MV_CTL_PLAY";	 
+		public static final String MV_CTL_PAUSE = "com.wwj.action.MV_CTL_PAUSE";	 
+		public static final String MV_CTL_NEXT = "com.wwj.action.MV_CTL_NEXT";		 
+		public static final String MV_CTL_PREV = "com.wwj.action.MV_CTL_PREV";		 
+		public static final String MV_CTL_PLAY_PAUSE = "com.wwj.action.MV_CTL_PLAY_PAUSE";	 		
+		
 	}
 
 	

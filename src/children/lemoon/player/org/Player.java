@@ -1,13 +1,20 @@
 package children.lemoon.player.org;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 
+import com.dd.database.DatabaseManager;
+import com.dd.database.QueryExecutor;
+import com.dd.my.CacheMgrDAO;
+
 import children.lemoon.Configer;
 import children.lemoon.R;
+import children.lemoon.music.PlayerService.MyReceiver;
 import children.lemoon.music.util.MediaUtil;
 import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.ResponePList;
@@ -24,8 +31,13 @@ import children.lemoon.utils.MyImageLoadTask;
 import logger.lemoon.Logger;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 
 import android.media.AudioManager;
@@ -41,7 +53,9 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.View.OnClickListener;
 
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -52,7 +66,7 @@ import android.widget.Toast;
 
 public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	private MySurfaceView mSurfaceView;
-	private SurfaceHolder mHolder;
+	//private SurfaceHolder mHolder;
 	private MediaPlayer mPlayer = null;
 
 	int m_times = 0;
@@ -68,13 +82,9 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 
 	final int CMD_PLAY_PURL = 2000;
 	final int CMD_REFRESH_SEEKBAR = 2001;
-
-	private int mVideoWidth;
-	private int mVideoHeight;
-
-	private int mSurfaceWidth;
-	private int mSurfaceHeight;
-
+ 
+	private boolean isIdle = true;
+	
 	int mDuration;
 	LinearLayout mHeaderContainer;
 	RelativeLayout mCtrlContainer;
@@ -82,175 +92,141 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	ImageView mBattery;
 	View mFill1, mFill2;
 	TextView mTvCurtm, mTvDur;
-
+	
+	int mRunMode = Configer.RunMode.MODE_NETWORK; 
+	
 	private LinkedList<PlayItemEntity> mData = new LinkedList<PlayItemEntity>();
 	private MyHorizontalScrollView mHorizontalScrollView;
 	private HorizontalScrollViewAdapter mAdapter;
 	private int mCurPg = 0;
+	
 	private boolean mBCtrlbarShow = false;
 	SeekBar sBar;
+	public Handler mHandler = new Handler(/*getMainLooper()*/) {
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
 
-	public void fillEvent(View view) {
-		toggleClick();
-	}
+			case CMD_PLAY_PURL:
+				String purl = (String) msg.getData().get("purl");
+				myPlay(purl);
+				break;
 
-	public class DelayThread extends Thread {
-		int milliseconds;
+			case CMD_REFRESH_SEEKBAR:
+				if (mPlayer == null || mDuration == 0)
+					break;
+				int position = mPlayer.getCurrentPosition();
+				int ps = (position * sBar.getMax())/ mDuration;
+				
+				mTvCurtm.setText(MediaUtil.formatTime(position));
+				sBar.setProgress(ps);
+				break;
 
-		public DelayThread(int i) {
-			milliseconds = i;
-		}
-
-		public void run() {
-			while (true) {
-				try {
-					sleep(milliseconds);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				mHandler.sendEmptyMessage(CMD_REFRESH_SEEKBAR);
 			}
-		}
-	}
+		};
+	};
+	
+	private boolean mbPause = false;
 
-	public void startProgressUpdate() {
-		// 开辟Thread 用于定期刷新SeekBar
-		DelayThread dThread = new DelayThread(100);
-		dThread.start();
-	}
+	private Button mBtnPlay;
+	String mCurLocalPath = "";
+	int mCurCateId;
 
-	void initMyView() {
-		mHeaderContainer = (LinearLayout) findViewById(R.id.header_container);
-		mCtrlContainer = (RelativeLayout) findViewById(R.id.ctrlbar_container);
-		mMvTitle = (TextView) findViewById(R.id.mv_title);
-		mBattery = (ImageView) findViewById(R.id.battery);
-		mFill1 = findViewById(R.id.fill1);
-		mFill2 = findViewById(R.id.fill2);
-
-		mTvCurtm = (TextView) findViewById(R.id.curtime); 
-		mTvDur = (TextView) findViewById(R.id.dur);
+	SharedPreferences mPref;
+	final String SP_CUR_PAGE = "page"; 
+	final String SP_CUR_CLICKID = "clickid"; 	
+	
+	
+	private void saveState(final List<PlayItemEntity> data){
+		//当前 已请求的页， 
+		//当前正在播放的clickid
+		//已请求的数据
+		DatabaseManager.getInstance().executeQueryTask(new QueryExecutor() {
+		    @Override
+		    public void run(SQLiteDatabase database) {
+		    	CacheMgrDAO udao = new CacheMgrDAO(database, Player.this); // your class
+		    	List<PlayItemEntity> tmp = null;
+		    	
+		    	if(data == null || data.size()==0){
+		    		tmp  = mData;
+		    	}
+		    	else{
+		    		tmp = data;
+		    	}
+		    	
+		    	for(PlayItemEntity pie : tmp){
+		    		udao.insert(pie.getId(), pie.getName(), pie.getFileSize(), pie.getPlayCnt(), pie.getPic(), pie.getDownUrl(),mCurCateId);
+		    	} 		    	
+		    }
+		});
 		
-		sBar = (SeekBar) findViewById(R.id.seekb);
-		sBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-			@Override
-			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onStartTrackingTouch(SeekBar seekBar) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onStopTrackingTouch(SeekBar seekBar) {
-				// TODO Auto-generated method stub
-				int dest = seekBar.getProgress();
-				int sMax = sBar.getMax();
-				mPlayer.seekTo(mDuration * dest / sMax);
-			}
+		
+		mPref.edit().putInt(SP_CUR_PAGE+"_"+mCurCateId, mCurPg).commit();
+		mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, mHorizontalScrollView.getClickPos()).commit();
+	}
+	
+	private void recoverState(){
+		if(mRunMode == Configer.RunMode.MODE_LOCAL){
+			queryPlayList(mCurPg+1);
+			return;
+		}
+		
+		//读取数据库， 当然是在子线程中执行的
+		DatabaseManager.getInstance().executeQueryTask(new QueryExecutor() {
+		    @Override
+		    public void run(SQLiteDatabase database) {
+		    	CacheMgrDAO udao = new CacheMgrDAO(database, Player.this); // your class
+		    	Cursor cursor = udao.selectAll(mCurCateId);
+ 		    	if(cursor == null){
+		    		Logger.LOGD("", "have no data to ...");
+		    		return;
+		    	}
+ 		    	mData.clear();
+				for(cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()) {
+					PlayItemEntity pie = new PlayItemEntity();
+					pie.setId(cursor.getInt(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_MID)));
+					pie.setName(cursor.getString(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_NAME)));
+					pie.setFileSize(cursor.getInt(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_FSIZE)));
+					pie.setPlayCnt(cursor.getInt(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_CNT)));
+					pie.setPic(cursor.getString(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_PIC)));
+					pie.setDownUrl(cursor.getString(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_URL)));
+					mData.add(pie);
+ 		    	} 
+				
+				//加载
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						int curpg = mPref.getInt(SP_CUR_PAGE+"_"+mCurCateId, -1);
+						int clickid = mPref.getInt(SP_CUR_CLICKID+"_"+mCurCateId, -1);
+						
+						if(curpg==-1 || clickid==-1){
+							mCurPg = 0;
+							clickid = 0;
+						}
+						else{
+							mCurPg = curpg;
+						}
+						
+//						mHorizontalScrollView.setClickPos(clickid);
+//						mHorizontalScrollView.initDatas(mAdapter);
+						initHScrollView(clickid);
+						
+						if(mData.size() == 0){
+							queryPlayList(mCurPg+1);
+						}
+						else{
+							mBfirstData = false;
+							myPlay(clickid);
+						}						
+					}
+				});
+		    }
 		});
 	}
-
-	private Runnable ctrBarHidding = new Runnable() {
-		public void run() {
-			mBCtrlbarShow = true;
-			toggleClick();
-
-			mHandler.removeCallbacks(ctrBarHidding); //执行一次就取消
-		}
-	};
-
-	void ctrlShowMgr() {
-		mHandler.removeCallbacks(ctrBarHidding); // 停止Timer
-		mHandler.postDelayed(ctrBarHidding, 4000); // 开始Timer
-	}
-
-	void toggleClick() {
-		if (mBCtrlbarShow) {
-			// hide
-			mBCtrlbarShow = false;
-
-			mFill1.setVisibility(View.GONE);
-			mFill2.setVisibility(View.GONE);
-			mHeaderContainer.setVisibility(View.GONE);
-			mCtrlContainer.setVisibility(View.GONE);
-			mHorizontalScrollView.setVisibility(View.GONE);
-			mHandler.removeCallbacks(ctrBarHidding);
-
-		} else {
-			mBCtrlbarShow = true;
-			mFill1.setVisibility(View.VISIBLE);
-			mFill2.setVisibility(View.VISIBLE);
-			mHeaderContainer.setVisibility(View.VISIBLE);
-			mCtrlContainer.setVisibility(View.VISIBLE);
-			mHorizontalScrollView.setVisibility(View.VISIBLE);
-			
-			ctrlShowMgr();
-		}
-	}
-
-	// ------------------ surface callback -------------------
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-		Logger.LOGD(TAG, "Surface Change:::");
-		mSurfaceWidth = w;
-		mSurfaceHeight = h;
-		Logger.LOGD(TAG, "surfaceChanged video, w=" + mVideoWidth + ", h=" + mVideoHeight);
-		Logger.LOGD(TAG, "surfaceChanged surfacesize,w=" + mSurfaceWidth + ",h=" + mSurfaceHeight);
-	}
-
-	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-		Logger.LOGD(TAG, "surfaceCreated");
-
-		mSurfaceView.setY(0);
-		mHolder.setFixedSize(mDm.widthPixels, mDm.heightPixels);
-		mSurfaceView.mIsFullScreen = false;
-		if (mPlayer != null)
-			mPlayer.setDisplay(mHolder);
-
-		initPlayer();
-		myPlay(mPlayPath);
-	}
-
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		Logger.LOGD("Surface Destory:::", "surfaceDestroyed called");
-		mHolder = null;
-		releasePlayer();
-
-	}
-
-	private void releasePlayer() {
-		if (mPlayer != null) {
-			mPlayer.release();
-			mPlayer = null;
-		}
-	}
-
-	public Handler mHandler;
-
-	// based on surfaceview, then init other view or resource in function
-	// surfacecreated
-	void initSurfaceView() {
-		mVideoWidth = 0;
-		mVideoHeight = 0;
-		mSurfaceWidth = 0;
-		mSurfaceHeight = 0;
-
-		mSurfaceView = (MySurfaceView) this.findViewById(R.id.surface_view);
-
-		mSurfaceView.setFocusable(true);
-		mSurfaceView.setFocusableInTouchMode(true);
-		mSurfaceView.requestFocus();
-
-		mHolder = mSurfaceView.getHolder();
-		mHolder.addCallback(this);
-	}
-
+	
+	
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
@@ -258,47 +234,14 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		mContext = this;
 		this.getWindowManager().getDefaultDisplay().getMetrics(mDm);
 		setContentView(R.layout.mv_player);
-		// getWindow().getDecorView().setSystemUiVisibility(8);
-
-		initMyView();
-		startProgressUpdate();
-
-		Intent it = getIntent();
-		String str = it.getStringExtra("video_name");
-
-		mPlayPath = it.getStringExtra("video_path");
-
-		mHandler = new Handler(getMainLooper()) {
-			@Override
-			public void handleMessage(Message msg) {
-				switch (msg.what) {
-
-				case CMD_PLAY_PURL:
-					String purl = (String) msg.getData().get("purl");
-					myPlay(purl);
-					break;
-
-				case CMD_REFRESH_SEEKBAR:
-					if (mPlayer == null || mDuration == 0)
-						break;
-					int position = mPlayer.getCurrentPosition();
-					int sMax = sBar.getMax();
-					sBar.setProgress(position * sMax / mDuration);
-					break;
-
-				}
-
-				removeMessages(msg.what);
-			};
-		};
-
-		initSurfaceView();
-
-		// =====================
+		
+		
+		DatabaseManager.initializeInstance(this);
+		mPref = getSharedPreferences("sv", 0);
+		
+		
 		mHorizontalScrollView = (MyHorizontalScrollView) findViewById(R.id.id_horizontalScrollView);
 		mAdapter = new HorizontalScrollViewAdapter(this, mHorizontalScrollView, mData);
-
-		
 		//添加触摸回调，
 		mHorizontalScrollView.setTouchListener(new TouchListener() {
 			@Override
@@ -319,21 +262,229 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		// 添加点击回调
 		mHorizontalScrollView.setOnItemClickListener(new OnItemClickListener() {
 			public void onClick(View view, int position) {
-				view.setBackgroundColor(Color.parseColor("#AA024DA4"));
-				myPlay(position);
+				//view.setBackgroundColor(Color.parseColor("#AA024DA4"));
+				mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, mHorizontalScrollView.getClickPos()).commit();
 				
+				myPlay(position);
 			}
 		});
+		
+		
+		registerMyRcv();
+		initSurfaceView();
+		initMyView();
+		initPlayer();
+		startProgressUpdate();
+ 
+		
+		mPlayPath = getIntent().getStringExtra("video_path");
 
-		queryPlayList(mCurPg+1);
+		//--------- 识别 运行模式： 本地 or 网络 , 分类标识 ---------------
+		mCurCateId = getIntent().getIntExtra("cataId", -1);
+		
+		String localpath  = getIntent().getStringExtra("localpath");
+		if(localpath != null){
+			if(localpath.isEmpty() || !new File(localpath).exists()){
+				Toast.makeText(this, "路径非法："+ localpath, Toast.LENGTH_SHORT).show();
+				finish();
+				return;
+			}
+			
+			mCurLocalPath = localpath;
+			mRunMode = Configer.RunMode.MODE_LOCAL;
+		}
+		else{
+			//mCurCateId = getIntent().getIntExtra("cataId", -1);
+			if(mCurCateId == -1){
+				Toast.makeText(this, "非法类别："+ mCurCateId, Toast.LENGTH_SHORT).show();
+				finish();
+				return;
+			}
+			mRunMode = Configer.RunMode.MODE_NETWORK;
+		}
+		//-----------------------------------------------
+		
+		//queryPlayList(mCurPg+1);
+		
+		
+		//加载数据,来源多种
+		recoverState();
+		
+		// 模式是显示界面上的各控件的，几秒后消失。
+		// 如果默认不显示，则在首次播放时，黑屏，不知道为什么
+		ctrlShowMgr();
+	}
+
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+		// getWindow().getDecorView().setSystemUiVisibility(8);
+		Logger.LOGD(TAG, "-=-=-=-onResume-=-=-=-=");
+
+//		if (mPlayer != null) {
+//			myPlay(mPlayPath);
+//		}
+	}
+	
+	
+	
+	
+
+	
+
+	
+	
+	//------------        seekbar  control --------------
+	public class DelayThread extends Thread {
+		private boolean pasued = false;
+		private String control = ""; // 只是需要一个对象而已，这个对象没有实际意义
+
+		private boolean brunning = true;
+
+		public void setPause(boolean pause) {
+			if (!pause) {
+				synchronized (control) {
+					control.notifyAll();
+				}
+			}
+			this.pasued = pause;
+		}
+
+		public boolean isPaused() {
+			return this.pasued;
+		}
+
+		public void setStop() {
+			brunning = false;
+			setPause(false);
+		}
+
+		protected void runPersonelLogic() {
+		};
+
+		public void run() {
+			while (brunning) {
+				synchronized (control) {
+					if (pasued) {
+						try {
+							control.wait();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				this.runPersonelLogic();
+			}
+		}
+	}
+
+	DelayThread mSeekThrd;
+	public void startProgressUpdate() {
+		 //开辟Thread 用于定期刷新SeekBar
+		if(mSeekThrd == null){
+			mSeekThrd = new DelayThread(){
+				@Override
+				protected void runPersonelLogic() {
+					// TODO Auto-generated method stub
+					super.runPersonelLogic();
+					try {
+						mHandler.sendEmptyMessage(CMD_REFRESH_SEEKBAR);
+						Log.e("", "seekbar...refresh...");
+
+						sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						//e.printStackTrace();
+						Log.e("", "interrupt!");
+					}
+				}
+			};
+			mSeekThrd.start();
+		}
+	}
+	//--------------------------------------------------
+	
+
+
+
+
+
+	void initMyView() {
+		mBtnPlay = (Button)findViewById(R.id.btn_play);
+		mBtnPlay.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				if(isPlaying()){
+					Log.e("", "btn: isplaying!!, begin to pause");
+					do_pause();
+					//mBtnPlay.setBackgroundResource(R.drawable.mv_btn_play);
+				}
+				else if(mbPause){
+					Log.e("", "btn: ispaused,begin to resmue!!");
+					//mBtnPlay.setBackgroundResource(R.drawable.mv_btn_pause);
+					do_resume();
+				}
+				
+				ctrlShowMgr();
+			}
+		});
+		mHeaderContainer = (LinearLayout) findViewById(R.id.header_container);
+		mCtrlContainer = (RelativeLayout) findViewById(R.id.ctrlbar_container);
+		mMvTitle = (TextView) findViewById(R.id.mv_title);
+		mBattery = (ImageView) findViewById(R.id.battery);
+		mFill1 = (View)findViewById(R.id.fill1);
+		mFill2 = (View)findViewById(R.id.fill2);
+		mFill1.setOnClickListener(new FillClickEvent());
+		mFill2.setOnClickListener(new FillClickEvent());
+		
+		mTvCurtm = (TextView) findViewById(R.id.curtime); 
+		mTvDur = (TextView) findViewById(R.id.dur);
+		
+		sBar = (SeekBar) findViewById(R.id.seekb);
+		sBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				// TODO Auto-generated method stub
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				Log.e("", "seekbar.......onStartTrackingTouch");
+				ctrlShowMgr();
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				int dest = seekBar.getProgress();
+				int sMax = sBar.getMax();
+				mPlayer.seekTo(mDuration * dest / sMax);
+				
+				Log.e("", "seekbar.......onStopTrackingTouch");
+				ctrlShowMgr();
+			}
+		});
 	}
 
 	
+	private void prev(boolean bplay){
+		if(bplay){
+			if(mHorizontalScrollView.getClickPos()  <=  0)
+				return;
+			mHorizontalScrollView.prev();
+			myPlay(mHorizontalScrollView.getClickPos());
+		}
+	}
 	
 	private void next(boolean bplay){
-		if (mAdapter.getCount() - mHorizontalScrollView.getItemCntConst() - (mHorizontalScrollView.getScrollPos() + 1) < 4) {
-			Log.e("", "!!!!!! begin to load pg: " + (mCurPg + 1));
-			queryPlayList(mCurPg + 1);
+		if(mRunMode == Configer.RunMode.MODE_NETWORK){
+			if (mAdapter.getCount() - mHorizontalScrollView.getItemCntConst() - (mHorizontalScrollView.getScrollPos() + 1) < 12) {
+				Log.e("", "!!!!!! begin to load pg: " + (mCurPg + 1));
+				queryPlayList(mCurPg + 1);
+			}
 		}
 		
 		if(bplay){
@@ -343,32 +494,18 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			myPlay(mHorizontalScrollView.getClickPos());
 		}
 	}
-	
-	// AutoScrollTextView mTopNotice;
-	@Override
-	protected void onResume() {
-		// TODO Auto-generated method stub
-		super.onResume();
-		// getWindow().getDecorView().setSystemUiVisibility(8);
-		Logger.LOGD(TAG, "-=-=-=-onResume-=-=-=-=");
-
-		if (mPlayer != null) {
-			myPlay(mPlayPath);
-		}
-	}
-
+ 
 	private void initPlayer() {
 		Logger.LOGD(TAG, "begint to new InitPlayer");
 		if (mPlayer != null) {
 			mPlayer.release();
-			mSurfaceView.setVisibility(View.GONE);
+			mSurfaceView.setVisibility(View.INVISIBLE);
 		}
 
 		mPlayer = new MediaPlayer();
 		mSurfaceView.setVisibility(View.VISIBLE);
-		if (mHolder != null)
-			mPlayer.setDisplay(mHolder);
-		mPlayer.setOnVideoSizeChangedListener(mVideoSizeListener);
+//		if (mHolder != null)
+//			mPlayer.setDisplay(mHolder);
 		mPlayer.setOnPreparedListener(mPrepareListener);
 		mPlayer.setOnCompletionListener(mCompleteListener);
 		mPlayer.setOnErrorListener(mErrorListener);
@@ -380,17 +517,201 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
 	}
 
-	boolean ispsrc(String url) {
-		// String a = url.substring(0, 1);
-		byte[] a = url.getBytes();
-		if (a[0] == 0x70) {
-			return true;
-		} else {
-			return false;
+	
+	private void do_pause(){
+		if(mPlayer!=null && mPlayer.isPlaying()){	//isPlaying()函数怪怪的
+			Log.e("", "do_pause");
+			mBtnPlay.setBackgroundResource(R.drawable.mv_btn_play);
+			mPlayer.pause();
+			mbPause = true;
 		}
+	}
+	
+	
+	private void togglePlay(){
+		if(mPlayer == null)
+			return;
+		
+		if(mbPause){
+			do_resume();
+		}
+		else if(mPlayer.isPlaying()){
+			do_pause();
+		}
+	}
+	
+	private void do_resume(){
+		Log.e("", "Log");
+		if(mPlayer!=null && mbPause){
+			Log.e("", "do_resume");
+			mBtnPlay.setBackgroundResource(R.drawable.mv_btn_pause);
+			mPlayer.start();
+			mbPause = false;
+		}
+	}
+	
+	private boolean isPlaying(){
+		if(mPlayer!=null && mPlayer.isPlaying() && !mbPause)
+			return true;
+		return false;
+	}
+	
+ 
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		// TODO Auto-generated method stub
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_BACK:
+			Logger.LOGD(TAG, "exit.....");
+			if (mPlayer != null) {
+				mPlayer.release();
+				mPlayer = null;
+			}
+			finish();
+			return true;
+		 
+		////// 按键控制 //////////////
+
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
+	protected void onStop() {
+		// TODO Auto-generated method stub
+		super.onStop();
+		Logger.LOGD(TAG, "onStop");
+
+
+		releasePlayer();
+		unregisterMyRcv();
 	}
 
 	
+	
+	
+	
+	
+	boolean mBfirstData = true;
+	private boolean queryPlayList(int pgIdx/* , int pgSize */) {
+		if(mRunMode == Configer.RunMode.MODE_LOCAL){
+			if(!mBfirstData)
+				return false;
+			
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					mData.clear();
+					mCurPg = 0;
+				
+					File f = new File(mCurLocalPath);
+					String[] l = f.list();
+					if(l == null){
+						//Toast.makeText(this, mCurLocalPath+ " 目录下没有内容", Toast.LENGTH_SHORT).show();
+						finish();
+						return ;
+					}
+					
+					if(!mCurLocalPath.endsWith("/"))
+						mCurLocalPath += "/";
+					
+					for(String file : l){
+						//Log.e("", mCurLocalPath+file);
+						PlayItemEntity pie = new PlayItemEntity();
+						pie.setName(file);
+						pie.setDownUrl(mCurLocalPath+file);
+						mData.add(pie);
+					}		
+					mBfirstData = false;
+
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							//mHorizontalScrollView.initDatas(mAdapter);
+							initHScrollView(-1);
+							myPlay(mHorizontalScrollView.getClickPos());		
+						}
+					});
+				}
+			}).start();
+			
+
+			return true;
+		}
+		else{
+			// mCurCateId
+			HashMap<String, Object> bodyRequest = new HashMap<String, Object>();
+			// String timeStamp = TimeUtil.getTimeStamp();
+			// bodyRequest.put("classid", gameTypeId);
+			bodyRequest.put("pageindex", pgIdx);
+			bodyRequest.put("pagesize", "30");
+
+			HttpManger http = new HttpManger(this, bHandler, this);
+			return http.httpRequest(Configer.TYPE_QUICK_ENTRY_TEST, bodyRequest, false, ResponePList.class, false, false, true);
+		}
+	}
+
+	@Override
+	protected void onPostHandle(int requestType, Object data, boolean status, int paramInt2, Object paramObject2, Object paramObject3) {
+		// TODO Auto-generated method stub
+		super.onPostHandle(requestType, data, status, paramInt2, paramObject2, paramObject3);
+		if (data == null) {
+			return;
+		}
+ 
+		ResHeadAndBody rslt = (ResHeadAndBody) data;
+		// gson 将请求的数据，转为了ResponePList数据类型
+		ResponePList plist = (ResponePList) rslt.getBody();
+		List<PlayItemEntity> pList = plist.getpList();
+		if (pList == null || pList.isEmpty())
+			return;
+
+		mData.addAll(plist.getpList());
+		//mHorizontalScrollView.initDatas(mAdapter);
+		initHScrollView(-1);
+		mCurPg++;
+
+		if(	mBfirstData){
+			mBfirstData = false;
+			myPlay(mHorizontalScrollView.getClickPos());
+		}
+		/////////// 放在底部  每次请求要保存状态，保存状态  /////////////
+		saveState(plist.getpList());
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		// TODO Auto-generated method stub
+		switch (event.getAction()) {
+		case MotionEvent.ACTION_DOWN:
+			if(event.getY() >= mCtrlContainer.getY()){
+				if(!mBCtrlbarShow)
+					toggleClick();	
+				else
+					ctrlShowMgr();
+			}
+			else
+			{
+				Log.e("", "!!!!!!!!!!!!!!!!!!!!!down");
+				toggleClick();				
+			}
+ 			return true;
+		}
+		return super.onTouchEvent(event);
+	}
+
+ 
+	private void initHScrollView(int clickpos){
+		if(clickpos >= 0)
+			mHorizontalScrollView.setClickPos(clickpos);
+		mHorizontalScrollView.initDatas(mAdapter);
+	}
+	
+	
+	// ------------------- player control ---------------------
 	public void myPlay(int curClickPos){
 		if(mData==null || curClickPos>=mData.size())
 			return;
@@ -400,11 +721,9 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			next(true);
 			return;
 		}
-			
-		
+
 		if (mPlayPath != null && mPlayPath.compareTo(pie.getDownUrl()) == 0)
 			return;
-
 		mPlayPath = pie.getDownUrl();
 		myPlay(mPlayPath);
 	}
@@ -415,12 +734,11 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			return;
 		}
 		
-		//if(!url.isEmpty())
-		//	return;
 		
+//		mSurfaceView.setVisibility(View.INVISIBLE);
+//		mSurfaceView.setVisibility(View.VISIBLE);
+//		mSurfaceView.requestFocus();
 		
-		Logger.LOGD(TAG, "myPlay:" + url);
-
 		mPlayPath = url;
 		Logger.LOGD(TAG, "begin to play:" + mPlayPath);
 
@@ -428,12 +746,17 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			Logger.LOGD(TAG, "mPlayer is null!!");
 			initPlayer();
 		}
-
 		try {
 			Logger.LOGD(TAG, "-=-=-=-=-=-= -=-=-reset-=--= -=-==-");
 			mPlayer.reset();
+			mPlayer.stop();
 			mPlayer.setDataSource(url);
-			mPlayer.prepareAsync();
+//			if(mRunMode == Configer.RunMode.MODE_LOCAL){
+//				mPlayer.prepare();
+//			}
+//			else if(mRunMode == Configer.RunMode.MODE_NETWORK){
+				mPlayer.prepareAsync();
+//			}
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 			Logger.LOGD(TAG, e.toString());
@@ -444,87 +767,16 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			e.printStackTrace();
 			Logger.LOGD(TAG, e.toString());
 		}
-
-		setViewFocus();
-	}
-
-	// for controling focus, when prepare to play
-	private void setViewFocus() {
-		mSurfaceView.requestFocus();
-	}
-
-	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		// TODO Auto-generated method stub
-		boolean ret = false;
-		switch (keyCode) {
-
-		case KeyEvent.KEYCODE_BACK:
-			Logger.LOGD(TAG, "exit.....");
-
-			if (mPlayer != null) {
-				// mPlayer.stop();
-				// mPlayer.reset();
-				mPlayer.release();
-				mPlayer = null;
-			}
-
-			finish();
-
-			ret = true;
-			break;
-		case KeyEvent.KEYCODE_DPAD_CENTER:
-		case KeyEvent.KEYCODE_ENTER:
-			Logger.LOGD(TAG, "onKeyDown event.getRepeatCount() " + event.getRepeatCount());
-
-			if (event.getRepeatCount() == 0) {
-				event.startTracking();
-				return true;
-			}
-
-			break;
-		default:
-			Logger.LOGD(TAG, "onkeydown:" + keyCode);
-			break;
-		}
-		Logger.LOGD(TAG, "global key down: ret=" + ret);
-
-		if (!ret)
-			ret = super.onKeyDown(keyCode, event);
-		return ret;
-
-	}
-
-	@Override
-	protected void onStop() {
-		// TODO Auto-generated method stub
-		super.onStop();
-		Logger.LOGD(TAG, "onStop");
-
-		// LeService.stop();
-
+	}	
+	
+	
+	private void releasePlayer() {
 		if (mPlayer != null) {
-			mPlayer.reset();
+			mPlayer.stop();
+			mPlayer.release();
+			mPlayer = null;
 		}
-
 	}
-
-	// ------------------- play listener ---------------------
-	MediaPlayer.OnVideoSizeChangedListener mVideoSizeListener = new MediaPlayer.OnVideoSizeChangedListener() {
-		@Override
-		public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
-			// TODO Auto-generated method stub
-			Logger.LOGD("Video Size Change", "onVideoSizeChanged called, w=" + width + ", h=" + height);
-
-			Logger.LOGD(TAG, "surfaceChanged video, w=" + mVideoWidth + ", h=" + mVideoHeight);
-			Logger.LOGD(TAG, "surfaceChanged surfacesize,w=" + mSurfaceWidth + ",h=" + mSurfaceHeight);
-			/*
-			 * if (mVideoWidth != 0 && mVideoHeight != 0)
-			 * setVideoLayout(mVideoLayout, mVideoAspectRatio);
-			 */
-		}
-	};
-
 	MediaPlayer.OnInfoListener mInfoListener = new MediaPlayer.OnInfoListener() {
 		@Override
 		public boolean onInfo(MediaPlayer player, int whatInfo, int extra) {
@@ -553,7 +805,6 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			return false;
 		}
 	};
-
 	MediaPlayer.OnErrorListener mErrorListener = new MediaPlayer.OnErrorListener() {
 		@Override
 		public boolean onError(MediaPlayer player, int whatError, int extra) {
@@ -563,15 +814,12 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 				// initPlayer();
 				Logger.LOGD("Play Error:::", "MEDIA_ERROR_SERVER_DIED");
 				break;
-
 			default:
 				break;
 			}
-
 			return true;
 		}
 	};
-
 	MediaPlayer.OnCompletionListener mCompleteListener = new MediaPlayer.OnCompletionListener() {
 		@Override
 		public void onCompletion(MediaPlayer player) {
@@ -580,70 +828,186 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			next(true);
 		}
 	};
-
 	MediaPlayer.OnPreparedListener mPrepareListener = new MediaPlayer.OnPreparedListener() {
 		@Override
 		public void onPrepared(MediaPlayer mPlayer) {
 			Logger.LOGD(TAG, "onPrepared called");
-			Logger.LOGD(TAG, "onPrepare video, w=" + mVideoWidth + ", h=" + mVideoHeight);
-			Logger.LOGD(TAG, "onPrepare surfacesize,w=" + mSurfaceWidth + ",h=" + mSurfaceHeight);
-
-			Logger.LOGD(TAG, "dur=" + mPlayer.getDuration() + ", pos=" + mPlayer.getCurrentPosition());
-
+ 
 			mMvTitle.setText(mData.get(mHorizontalScrollView.getClickPos()).getName());
 			mDuration = mPlayer.getDuration();
-			
+			if(mDuration == 0)
+				mDuration = 1200;
 			mTvDur.setText(MediaUtil.formatTime(mDuration));
+			mBtnPlay.setBackgroundResource(R.drawable.mv_btn_pause);
 			mPlayer.start();
 		}
 	};
+	//----------------------------------------------------------
+	
+	
 
-	private boolean queryPlayList(int pgIdx/* , int pgSize */) {
-		HashMap<String, Object> bodyRequest = new HashMap<String, Object>();
-		// String timeStamp = TimeUtil.getTimeStamp();
-		// bodyRequest.put("classid", gameTypeId);
-		bodyRequest.put("pageindex", pgIdx);
-		// bodyRequest.put("pagesize", pgSize);
-
-		HttpManger http = new HttpManger(this, bHandler, this);
-		return http.httpRequest(Configer.TYPE_QUICK_ENTRY_TEST, bodyRequest, false, ResponePList.class, false, false, true);
-	}
-
-	@Override
-	protected void onPostHandle(int requestType, Object data, boolean status, int paramInt2, Object paramObject2, Object paramObject3) {
-		// TODO Auto-generated method stub
-		super.onPostHandle(requestType, data, status, paramInt2, paramObject2, paramObject3);
-		if (data == null) {
-			return;
-		}
-
-		// 请求成功，并返回游戏列表
-		// if (requestType == 31) { }
-
-		ResHeadAndBody rslt = (ResHeadAndBody) data;
-		// gson 将请求的数据，转为了ResponePList数据类型
-		ResponePList plist = (ResponePList) rslt.getBody();
-		List<PlayItemEntity> pList = plist.getpList();
-		if (pList == null || pList.isEmpty())
-			return;
-
-		mData.addAll(plist.getpList());
-		mHorizontalScrollView.initDatas(mAdapter);
-		// mHorizontalScrollView.update();
-		mCurPg++;
-
-	}
-
-	@Override
-	public boolean onTouchEvent(MotionEvent event) {
-		// TODO Auto-generated method stub
-		switch (event.getAction()) {
-		case MotionEvent.ACTION_DOWN:
-			//Log.e("", "!!!!!!!!!!!!!!!!!!!!!down");
+	//---------------- 控件显示/隐藏 控制 ----------------
+	class FillClickEvent implements View.OnClickListener{
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			Log.e("", "fillevent, to hide it");
+			mBCtrlbarShow = true;
 			toggleClick();
-			return true;
 		}
-		return super.onTouchEvent(event);
+	}
+	//调用这个函数按理可以直接隐藏/显示控件的，在视频未播放时没有问题
+	//播放时只能调用显示，却无隐藏效果，在其它平台没有问题， 后来将seekbar的刷新事件屏蔽或将 刷新变慢，就可以了。
+	// 感觉是，只要seekbar上还有将要刷新的dongzuo
+	void toggleClick() {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				if (mBCtrlbarShow) {
+					Log.e("", "toggleClick begin to hide");
+					// hide
+					mBCtrlbarShow = false;
+					mSeekThrd.setPause(true);
+					mSeekThrd.interrupt();
+					mHandler.removeMessages(CMD_REFRESH_SEEKBAR);// Message(CMD_REFRESH_SEEKBAR);
+ 
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						//e.printStackTrace();
+					}
+					mHeaderContainer.setVisibility(View.INVISIBLE);
+					mCtrlContainer.setVisibility(View.INVISIBLE);
+					mHorizontalScrollView.setVisibility(View.INVISIBLE);	
+					mFill2.setVisibility(View.INVISIBLE);
+					mFill1.setVisibility(View.INVISIBLE);
+			 
+					//mSurfaceView.setVisibility(View.VISIBLE);
+					mSurfaceView.requestFocus();
+
+				} else {
+					Log.e("", "toggleClick begin to show");
+					mBCtrlbarShow = true;
+					mSeekThrd.setPause(false);
+					
+					mFill1.setVisibility(View.VISIBLE);
+					mFill2.setVisibility(View.VISIBLE);
+ 				
+					
+					mHeaderContainer.setVisibility(View.VISIBLE);
+					mCtrlContainer.setVisibility(View.VISIBLE);
+					mHorizontalScrollView.setVisibility(View.VISIBLE);
+
+					//解决初始控件设为invisible，在视频播放后，通过setvisible无法使控件显示的问题。
+					mFill1.getParent().requestTransparentRegion(mSurfaceView);
+					ctrlShowMgr();
+				}
+			}
+		});
+
+	}
+	private Runnable ctrBarHidding = new Runnable() {
+		public void run() {
+			Log.e("", "ctrBarHidding...");
+			mBCtrlbarShow = true;
+			toggleClick();
+			mHandler.removeCallbacks(ctrBarHidding); //执行一次就取消
+
+		}
+	};
+
+	void ctrlShowMgr() {
+		Log.e("", "---ctrlShowMgr");
+		mHandler.removeCallbacks(ctrBarHidding); // 停止Timer
+		mHandler.postDelayed(ctrBarHidding, 4000); // 开始Timer
+	}
+	//--------------------------------------------------------------
+
+	
+	
+	
+	
+	
+	
+	
+	// ------------------ surface relative-------------------
+	void initSurfaceView() {
+		mSurfaceView = (MySurfaceView) this.findViewById(R.id.surface_view);
+		//mHolder = mSurfaceView.getHolder();
+		//mHolder.addCallback(this);
+		mSurfaceView.getHolder().addCallback(this);
+	}
+	
+	@Override
+	public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+		Logger.LOGD(TAG, "Surface Change:::");
 	}
 
+	@Override
+	public void surfaceCreated(SurfaceHolder holder) {
+		Logger.LOGD(TAG, "surfaceCreated");
+		mSurfaceView.setY(0);
+		//mHolder.setFixedSize(mDm.widthPixels, mDm.heightPixels);
+		mSurfaceView.getHolder().setFixedSize(mDm.widthPixels, mDm.heightPixels);
+		mSurfaceView.mIsFullScreen = false;
+		if (mPlayer != null)
+			mPlayer.setDisplay(/*mHolder*/mSurfaceView.getHolder());
+
+		//initPlayer();
+	}
+	@Override
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		Logger.LOGD("Surface Destory:::", "surfaceDestroyed called");
+		//mHolder = null;
+		//releasePlayer();
+
+	}
+	//------------------------------------------------------------
+	
+	
+	//------------------------ receiver -------------------------
+	MyReceiver myReceiver;
+	private void registerMyRcv(){
+		Log.e(TAG, "Service registerMyRcv");
+		if(myReceiver == null){
+			myReceiver = new MyReceiver();
+			IntentFilter filter = new IntentFilter();
+			filter.addAction(Configer.Action.MV_CTL_PLAY);
+			filter.addAction(Configer.Action.MV_CTL_PAUSE);
+			filter.addAction(Configer.Action.MV_CTL_NEXT);
+			filter.addAction(Configer.Action.MV_CTL_PREV);
+			filter.addAction(Configer.Action.MV_CTL_PLAY_PAUSE);
+			
+			registerReceiver(myReceiver, filter);
+		}
+	}
+	
+	private void unregisterMyRcv(){
+		if(myReceiver != null)
+			unregisterReceiver(myReceiver);
+	}
+	
+	public class MyReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if(action.equals(Configer.Action.MV_CTL_PLAY)){
+				do_resume();
+			}
+			else if(action.equals(Configer.Action.MV_CTL_PAUSE)){
+				do_pause();
+			}
+			else if(action.equals(Configer.Action.MV_CTL_PLAY_PAUSE)){
+				togglePlay();
+			}
+			else if(action.equals(Configer.Action.MV_CTL_NEXT)){
+				next(true);
+			}
+			else if(action.equals(Configer.Action.MV_CTL_PREV)){
+				prev(true);
+			}
+		}
+	}
+	//-----------------------------------------------------------------
 }

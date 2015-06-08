@@ -17,12 +17,14 @@ package children.lemoon.player.org;
  */
 
 import logger.lemoon.Logger;
+import android.app.Activity;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.net.Uri;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.MediaController;
@@ -42,7 +44,8 @@ public class MySurfaceView extends SurfaceView implements MediaPlayerControl {
 	private int mVideoWidth;
 	private int mVideoHeight;
 
-
+	int screenWidth;   
+	int screenHeight;
 
 	public boolean mIsFullScreen = false;
 
@@ -53,28 +56,41 @@ public class MySurfaceView extends SurfaceView implements MediaPlayerControl {
 	public int getVideoHeight() {
 		return mVideoHeight;
 	}
-
 	public MySurfaceView(Context context) {
 		super(context);
 		mContext = context;
-
+		DisplayMetrics displaymetrics = new DisplayMetrics();
+		((Activity)mContext).getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+		
+		screenWidth = displaymetrics.widthPixels;
+		screenHeight = displaymetrics.heightPixels;
 	}
 
 	public MySurfaceView(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
 		mContext = context;
-
+		DisplayMetrics displaymetrics = new DisplayMetrics();
+		((Activity)mContext).getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+		
+		screenWidth = displaymetrics.widthPixels;
+		screenHeight = displaymetrics.heightPixels;
 	}
 
 	public MySurfaceView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 		mContext = context;
-
+		DisplayMetrics displaymetrics = new DisplayMetrics();
+		((Activity)mContext).getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+		
+		screenWidth = displaymetrics.widthPixels;
+		screenHeight = displaymetrics.heightPixels;   // 432 != 480?????
 	}
 
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		setMeasuredDimension(1024, 600);
+ 
+		//setMeasuredDimension(screenWidth, screenHeight);
+		setMeasuredDimension(800, 480);
 	}
 
 	public int resolveAdjustedSize(int desiredSize, int measureSpec) {

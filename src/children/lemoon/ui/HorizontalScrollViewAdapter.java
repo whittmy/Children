@@ -57,15 +57,16 @@ public class HorizontalScrollViewAdapter {
 		}
  
 
-		convertView.setBackgroundColor(Color.WHITE);
+		//convertView.setBackgroundColor(Color.WHITE);
 		
 		
 		
 		PlayItemEntity pie = mDatas.get(position);
-		MyImageLoadTask imgLoader = new MyImageLoadTask(viewHolder.mImg, 80, 80);
-		if (!TextUtils.isEmpty(pie.getPic())) {
-			imgLoader.execute(new String[] { pie.getPic() });
-		}
+//		MyImageLoadTask imgLoader = new MyImageLoadTask(viewHolder.mImg, 80, 80);
+//		if (!TextUtils.isEmpty(pie.getPic())) {
+//			imgLoader.execute(new String[] { pie.getPic() });
+//		}
+		viewHolder.mImg.setImageResource(R.drawable.mv_bg_default);
 		
 		if(mView.getClickPos() == position){
 			viewHolder.mImgPlaying.setVisibility(View.VISIBLE);

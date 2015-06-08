@@ -169,7 +169,11 @@ public class MuPlayer extends Activity{
 			@Override
 			public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 				// TODO Auto-generated method stub
-				 //判断是否滚到最后一行, 最后三行
+				//本地模式不涉及翻页
+				if(mIService != null && mIService.getCurRunMode()==Configer.RunMode.MODE_LOCAL)
+					return;
+				
+				//判断是否滚到最后一行, 最后三行
 				if (firstVisibleItem + visibleItemCount+3 >= totalItemCount && totalItemCount > 0) {
 					Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_GET_NEWPG, null);
 				}
@@ -196,6 +200,15 @@ public class MuPlayer extends Activity{
 
            	mAdapter = new SongListAdapter(MuPlayer.this, mIService.getDatas());
 			mVSongList.setAdapter(mAdapter);
+			
+			
+			if(mIService.isPlaying()){
+				mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
+			}
+			else{
+				mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
+			}
+			mTvmuName.setText(mIService.getCurTitle());
         }
     }; 	
 	
@@ -227,7 +240,7 @@ public class MuPlayer extends Activity{
 	
 	
 	
-	String mCurCataName;
+	//String mCurCataName;
 	@Override
 	protected void onResume() {
 		// TODO Auto-generated method stub
@@ -244,17 +257,26 @@ public class MuPlayer extends Activity{
 			runmode = Configer.RunMode.MODE_LOCAL;
 		}
  
-		
+		//获取分类id，这个决定数据，直接传入服务
+		int cataid = it.getIntExtra("cataId", -1);
+		if(cataid == -1){
+			Toast.makeText(this, "invalid cata", Toast.LENGTH_SHORT).show();
+			finish();
+			return;
+		}
+
+		//设置分类名
 		if(mTvCate.getText() != cataName){
 			if(!cataName.isEmpty()){
 				mTvCate.setText(cataName);
 			}
 		}
-
+ 
 		
 		//启动服务器
 		it = new Intent(MuPlayer.this, PlayerService.class);
 		it.putExtra("runmode", runmode);
+		it.putExtra("cataId", cataid);
 		if(runmode == Configer.RunMode.MODE_LOCAL)
 			it.putExtra("localpath", localpath);
 		startService(it);
@@ -274,6 +296,8 @@ public class MuPlayer extends Activity{
 		super.onStop();
 		if(playerReceiver != null)
 			unregisterReceiver(playerReceiver);
+		if(mConnection !=null)
+			unbindService(mConnection);
 	}
 	/////////////////////////////////////////////////////////////
 

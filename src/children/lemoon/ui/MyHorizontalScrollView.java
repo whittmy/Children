@@ -16,7 +16,7 @@ import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 
 public class MyHorizontalScrollView extends HorizontalScrollView implements
-		OnClickListener
+		OnClickListener 
 {
 
 	/**
@@ -71,11 +71,11 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 	 */
 	private int mChildHeight;
 	/**
-	 * 当前最后一张图片的index
+	 * 当前最后一张图片的index， 一方面记录到哪儿了，另一方面用于定位mAdapter数据
 	 */
 	private int mCurrentIndex;
 	/**
-	 * 当前第一张图片的下标
+	 * 当前第一张图片的下标, 一方面记录前面有多少个元素，另一方面用于定位mAdapter数据
 	 */
 	private int mFristIndex;
 	/**
@@ -125,6 +125,48 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 		mContainer = (LinearLayout) getChildAt(0);
 	}
 
+	
+	public void loadIdx(int pos){
+		if(pos<0 || pos>=(mAdapter.getCount()-1)){
+			return;
+		}
+		
+		//这儿还没有考虑到页面的获取哦的判断哦
+		
+		mContainer = (LinearLayout) getChildAt(0);
+		mContainer.removeAllViews();
+		mViewPos.clear();
+
+		//设定一屏最后一个即代表该pos的
+		mCurrentIndex = pos;
+		mClickPos = pos;
+		
+		
+		int b = mCurrentIndex - mCountOneScreen;
+		if(b >= 0){
+			mFristIndex = b;
+			for (; b<mCurrentIndex; b++) {
+				View view = mAdapter.getView(b, null, mContainer);
+				view.setOnClickListener(this);
+				mContainer.addView(view);
+				mViewPos.put(view, b);
+				
+				if(mClickPos == b)
+					mOldClickView = view;
+			}
+			//如果设置了滚动监听则触发
+			if (mListener != null) {
+				notifyCurrentImgChanged();
+			}
+		}
+		else{
+			mFristIndex = 0;
+			initFirstScreenChildren(mCountOneScreen);
+		}
+	}
+	
+	
+	
 	/**
 	 * 加载下一张图片
 	 */
@@ -202,10 +244,10 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 	public void notifyCurrentImgChanged()
 	{
 		//先清除所有的背景色，点击时会设置为蓝色
-		for (int i = 0; i < mContainer.getChildCount(); i++)
-		{
-			mContainer.getChildAt(i).setBackgroundColor(Color.WHITE);
-		}
+//rocking		for (int i = 0; i < mContainer.getChildCount(); i++)
+//		{
+//			mContainer.getChildAt(i).setBackgroundColor(Color.WHITE);
+//		}
 		
 		mListener.onCurrentImgChanged(mFristIndex, mContainer.getChildAt(0));
 
@@ -213,6 +255,10 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 
 	public int getClickPos(){
 		return mClickPos;
+	}
+	
+	public void setClickPos(int pos){
+		mClickPos = pos;
 	}
 	
 	public int getScrollPos(){
@@ -233,18 +279,10 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 		this.mAdapter = mAdapter;
 		if(mAdapter ==null || mAdapter.getCount() == 0)
 			return;
-		
-//		rocking
-//		mContainer = (LinearLayout) getChildAt(0);
-//		// 获得适配器中第一个View
-//		final View view = mAdapter.getView(0, null, mContainer);
-//		mContainer.addView(view);
-
+ 
 		// 强制计算当前View的宽和高
-		if (mChildWidth == 0 && mChildHeight == 0)
-		{
-			//rocking
-			mContainer = (LinearLayout) getChildAt(0);
+		if (mChildWidth == 0 && mChildHeight == 0) {
+ 			mContainer = (LinearLayout) getChildAt(0);
 			// 获得适配器中第一个View
 			final View view = mAdapter.getView(0, null, mContainer);
 			mContainer.addView(view);
@@ -299,6 +337,10 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 			mContainer.addView(view);
 			mViewPos.put(view, i);
 			mCurrentIndex = i;
+			
+			//初始化view时，顺便记录下当前获得焦点的view, 前提是初始化之前先设置好 clickpos，其默认为0
+			if(mClickPos == i)
+				mOldClickView = view;
 		}
 
 		if (mListener != null)
@@ -390,10 +432,10 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 	{
 		if (mOnClickListener != null)
 		{
-			for (int i = 0; i < mContainer.getChildCount(); i++)
-			{
-				mContainer.getChildAt(i).setBackgroundColor(Color.WHITE);
-			}
+//	rocking		for (int i = 0; i < mContainer.getChildCount(); i++)
+//			{
+//				mContainer.getChildAt(i).setBackgroundColor(Color.WHITE);
+//			}
 			
 			//注意调用顺序
 			switchClick(mOldClickView, mViewPos.get(v));

@@ -1,5 +1,6 @@
 ﻿package children.lemoon.music;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -20,6 +21,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.view.animation.AnimationUtils;
+import android.widget.Toast;
 
 import children.lemoon.Configer;
 import children.lemoon.Configer.RunMode;
@@ -55,7 +57,8 @@ public class PlayerService extends BaseReqService {
 	int mpgSize = 15;
 	
 	int mRunMode = Configer.RunMode.MODE_NETWORK; 
- 
+	int mCataId = -1;
+	
 	private int mPlayMode = Configer.PlayMode.MODE_LIST;			//播放状态，默认为顺序播放
 	private MyReceiver myReceiver;	//自定义广播接收器
 	private int currentTime;		//当前播放进度
@@ -157,7 +160,8 @@ public class PlayerService extends BaseReqService {
 				//先清除 当前播放时间的反复刷新机制。
 				mHandler.removeMessages(1);
 				
-				doNext();
+				//doNext();  //这个不翻页，所以要改成下面的
+				next();
 			}
 		});
 
@@ -177,25 +181,54 @@ public class PlayerService extends BaseReqService {
 	public void onStart(Intent intent, int startId) {
 		Log.e(TAG, "Service onStart, mData.size="+mData.size());
 		
+		String localpath = null;
+
 		int mode = intent.getIntExtra("runmode", -1);
-		String localpath;
-		if(mode != -1){
+		int cataId = intent.getIntExtra("cataId", -1);
+		if(mode != -1 && cataId!=-1){
 			if(mode==Configer.RunMode.MODE_LOCAL){
 				localpath = intent.getStringExtra("localpath");
 			}
 			
 			//如果模式不一致，则先清除数据
-			if(mRunMode != mode){
+			//若 分类不一样，则也清除数据
+			if(mRunMode != mode || cataId != mCataId){
 				mData.clear();
 				mCurPg = 0;
 			}
 			
+			mCataId = cataId;
 			mRunMode = mode;
 		}
  
 		
 		if(mRunMode == Configer.RunMode.MODE_LOCAL){
 			//本地
+			File f = new File(localpath);
+			if(!f.exists()){
+				Toast.makeText(this, localpath+ " 不存在", Toast.LENGTH_SHORT).show();
+				return;
+			}
+			
+			String[] l = f.list();
+			if(l == null){
+				Toast.makeText(this, localpath+ " 目录下没有内容", Toast.LENGTH_SHORT).show();
+				return;
+			}
+			
+			if(!localpath.endsWith("/"))
+				localpath += "/";
+			
+			for(String file : l){
+				//Log.e("", localpath+file);
+				PlayItemEntity pie = new PlayItemEntity();
+				pie.setName(file);
+				pie.setDownUrl(localpath+file);
+				mData.add(pie);
+			}
+			
+			//return;
+			
 			
 		}
 		else if(mRunMode == Configer.RunMode.MODE_NETWORK){
@@ -590,15 +623,19 @@ public class PlayerService extends BaseReqService {
 
 	
 	private boolean queryPlayList(int pgIdx/* , int pgSize */) {
-		Log.e(TAG, "Service queryPlayList pgIdx="+pgIdx);
-		HashMap<String, Object> bodyRequest = new HashMap<String, Object>();
-		// String timeStamp = TimeUtil.getTimeStamp();
-		// bodyRequest.put("classid", gameTypeId);
-		bodyRequest.put("pageindex", pgIdx);
-		// bodyRequest.put("pagesize", pgSize);
+		if(mRunMode == Configer.RunMode.MODE_NETWORK){
+			Log.e(TAG, "Service queryPlayList pgIdx="+pgIdx);
+			HashMap<String, Object> bodyRequest = new HashMap<String, Object>();
+			//bodyRequest.put("classid", mCataId);
+			bodyRequest.put("pageindex", pgIdx);
+			// bodyRequest.put("pagesize", pgSize);
 
-		HttpManger http = new HttpManger(this, bHandler, this);
-		return http.httpRequest(Configer.TYPE_QUICK_ENTRY_TESTA, bodyRequest, false, ResponePList.class, false, false, true);
+			HttpManger http = new HttpManger(this, bHandler, this);
+			return http.httpRequest(Configer.TYPE_QUICK_ENTRY_TESTA, bodyRequest, false, ResponePList.class, false, false, true);
+		}
+		else{
+			return true;
+		}
 	}
 	
 	protected void onPostHandle(int requestType, Object data, boolean status, int paramInt2, Object paramObject2, Object paramObject3) {
@@ -675,12 +712,7 @@ public class PlayerService extends BaseReqService {
 			// TODO Auto-generated method stub
 			return mRunMode;
 		}
-
-		@Override
-		public void setCurRunMode(int m) {
-			// TODO Auto-generated method stub
-			mRunMode = m;
-		}
+ 
     	
     	
     }  

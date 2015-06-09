@@ -10,7 +10,7 @@ import java.util.Timer;
 
 import com.dd.database.DatabaseManager;
 import com.dd.database.QueryExecutor;
-import com.dd.my.CacheMgrDAO;
+import com.dd.my.MvCacheMgrDAO;
 
 import children.lemoon.Configer;
 import children.lemoon.R;
@@ -144,7 +144,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		DatabaseManager.getInstance().executeQueryTask(new QueryExecutor() {
 		    @Override
 		    public void run(SQLiteDatabase database) {
-		    	CacheMgrDAO udao = new CacheMgrDAO(database, Player.this); // your class
+		    	MvCacheMgrDAO udao = new MvCacheMgrDAO(database, Player.this); // your class
 		    	List<PlayItemEntity> tmp = null;
 		    	
 		    	if(data == null || data.size()==0){
@@ -175,7 +175,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		DatabaseManager.getInstance().executeQueryTask(new QueryExecutor() {
 		    @Override
 		    public void run(SQLiteDatabase database) {
-		    	CacheMgrDAO udao = new CacheMgrDAO(database, Player.this); // your class
+		    	MvCacheMgrDAO udao = new MvCacheMgrDAO(database, Player.this); // your class
 		    	Cursor cursor = udao.selectAll(mCurCateId);
  		    	if(cursor == null){
 		    		Logger.LOGD("", "have no data to ...");
@@ -184,12 +184,12 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
  		    	mData.clear();
 				for(cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()) {
 					PlayItemEntity pie = new PlayItemEntity();
-					pie.setId(cursor.getInt(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_MID)));
-					pie.setName(cursor.getString(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_NAME)));
-					pie.setFileSize(cursor.getInt(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_FSIZE)));
-					pie.setPlayCnt(cursor.getInt(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_CNT)));
-					pie.setPic(cursor.getString(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_PIC)));
-					pie.setDownUrl(cursor.getString(cursor.getColumnIndex(CacheMgrDAO.COLUMNS_URL)));
+					pie.setId(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_MID)));
+					pie.setName(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_NAME)));
+					pie.setFileSize(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_FSIZE)));
+					pie.setPlayCnt(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_CNT)));
+					pie.setPic(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_PIC)));
+					pie.setDownUrl(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_URL)));
 					mData.add(pie);
  		    	} 
 				

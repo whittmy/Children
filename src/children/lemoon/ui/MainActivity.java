@@ -1,6 +1,7 @@
 ﻿package children.lemoon.ui;
 
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
@@ -60,6 +62,10 @@ public class MainActivity extends Activity{
 		findViewById(R.id.btn_play).setOnClickListener(listener);
 		findViewById(R.id.btn_pause).setOnClickListener(listener);
 		findViewById(R.id.btn_next).setOnClickListener(listener);
+		
+		
+		findViewById(R.id.btn_home).setOnClickListener(listener);
+		
 	}
 
 
@@ -72,6 +78,11 @@ public class MainActivity extends Activity{
 				it.putExtra("curCata",  "_debug:儿童分类");
 				it.putExtra("cataId", 100);
 				MainActivity.this.startActivity(it);
+			}
+			else if(v.getId() == R.id.btn_home){
+				Intent i = new Intent(Intent.ACTION_VIEW);
+				i.setData(Uri.parse("http://192.168.2.104/html5/lufylegend.js-lufylegend-1.9.9/examples/demo/rpg/"));
+				startActivity(i);
 			}
 			else if(v.getId() == R.id.btn_local){
 				Intent it = new Intent(MainActivity.this, MuPlayer.class);

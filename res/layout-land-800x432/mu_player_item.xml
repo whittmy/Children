@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:gravity="center_horizontal"
+    android:gravity="left"
     android:orientation="vertical" 
     android:background="@drawable/mu_list_bg_selector" ><!-- item背景色变换 -->
     <TextView
@@ -10,9 +10,14 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:gravity="left"
-        android:textSize="23sp"
+        android:textSize="18sp"
         android:singleLine="true"
+        android:paddingLeft="0dp"
+        android:paddingRight="0dp"
         android:duplicateParentState="true"
+        
         />
-	<!-- item文字颜色变换 -->
+	<!-- item点击后的文字颜色变换 只能通过adpater
+	
+	 -->
 </LinearLayout>

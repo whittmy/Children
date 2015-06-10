@@ -33,9 +33,10 @@
     </FrameLayout>
 
 
+    <!--对新的hlistview而已，此 textview的宽度是重点哦，如果设置为fillparent，则会影响最顶层view大小，如果wrap_content，则文字会完全显示，导致最终影响最顶层view -->
     <TextView
         android:id="@+id/mv_selector_item_text"
-        android:layout_width="match_parent"
+        android:layout_width="112dp"
         android:layout_height="wrap_content"
         android:layout_below="@id/imgcontainer"
         android:layout_centerHorizontal="true"

@@ -26,7 +26,6 @@ import children.lemoon.R.layout;
 import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.RecommendEntity;
 import children.lemoon.utils.BitmapUtil;
-import children.lemoon.utils.MyImageLoadTask;
 
 import logger.lemoon.Logger;
 

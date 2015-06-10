@@ -53,7 +53,7 @@
  	    android:focusableInTouchMode="false"   
  	    android:visibility="visible" />
  	
- 	<!-- 如果显示不了一屏，空着部分的背景就显得重要了 -->
+ 	<!-- 如果显示不了一屏，空着部分的背景就显得重要了 
     <children.lemoon.ui.MyHorizontalScrollView
         android:id="@+id/id_horizontalScrollView"
         android:layout_width="match_parent"
@@ -65,7 +65,7 @@
         android:scrollbars="none"
         android:visibility="visible" >
 
-        <!-- 因为这个会被全填充，背景不考虑 -->
+        因为这个会被全填充，背景不考虑 
         <LinearLayout
             android:id="@+id/id_gallery"
             android:layout_width="match_parent"
@@ -76,6 +76,17 @@
             android:layout_margin="0dp" >
         </LinearLayout>
     </children.lemoon.ui.MyHorizontalScrollView>
+    -->
+    
+    <com.devsmart.android.ui.HorizontalListView
+	  	android:id="@+id/id_horizontalScrollView"
+	  	android:layout_width="match_parent"
+	  	android:layout_height="153dp"
+	  	android:layout_below="@+id/fill1"
+        android:layout_marginTop="0dip"
+        android:background="#88000000"
+	  	android:padding="0dp"
+	  	android:visibility="visible"  />
     
     <View
  	    android:id="@+id/fill2"

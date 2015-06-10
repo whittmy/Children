@@ -1,82 +1,97 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-     android:layout_width="match_parent"
-    android:layout_height="match_parent"   
-    >
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ff0000" >
 
-	    
-	<LinearLayout 
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-	    android:layout_alignParentLeft="true"
-	    android:layout_marginLeft="10dip"
-	    android:layout_centerVertical="true"
-	    android:orientation="vertical" 
-	    android:gravity="center">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="10dip"
+        android:gravity="center"
+        android:orientation="vertical" >
+        <Button
+            android:id="@+id/btn_home"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="首页测试"
+            android:textSize="25sp" />
+        
+        <Button
+            android:id="@+id/btn_audio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="音频测试"
+            android:textSize="25sp" />
 
-	  <Button android:id="@+id/btn_audio"
-	      android:layout_width="wrap_content"
-	      android:layout_height="wrap_content"
-	      android:text="音频测试"
-	      
-	      android:textSize="25sp"/>
-	  <Button android:id="@+id/btn_local"
-	      android:layout_width="wrap_content"
-	      android:layout_height="wrap_content"
-	      android:text="本地音乐测试"
-	      
-	      android:layout_marginTop="20dp"
-	      android:textSize="25sp"/>
-	    <Button android:id="@+id/btn_video"
-	      android:layout_width="wrap_content"
-	      android:layout_height="wrap_content"
-	      android:text="视频测试"
-	      android:layout_marginTop="20dp"
-	      android:textSize="25sp"/>
-	    <Button android:id="@+id/btn_local_video"
-	      android:layout_width="wrap_content"
-	      android:layout_height="wrap_content"
-	      android:text="本地视频测试"
-	      android:layout_marginTop="20dp"
-	      android:textSize="25sp"/>    
-	</LinearLayout>   
-	<LinearLayout 
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-	    android:layout_alignParentRight="true"
-	    android:layout_marginRight="50dp"
-	    android:layout_centerVertical="true"
-	    android:orientation="horizontal">
-	    <TextView 
-	         android:layout_width="wrap_content"
-		     android:layout_height="wrap_content"
-		     android:text="音乐控制："
-		     android:textColor="#ffff00"
-		     android:textSize="25sp"/>
-	    <Button 
-	        android:id="@+id/btn_prev"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_marginLeft="20dip"
-	        android:text="上一曲"  />
-	    <Button 
-	        android:id="@+id/btn_play"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_marginLeft="20dip"
-	        android:text="播放"  />
-	    
-	    <Button 
-	        android:id="@+id/btn_pause"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_marginLeft="20dip"
-	        android:text="暂停"  />
+        <Button
+            android:id="@+id/btn_local"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="本地音乐测试"
+            android:textSize="25sp" />
 
-	    <Button 
-	        android:id="@+id/btn_next"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_marginLeft="20dip"
-	        android:text="下一曲"  />
-	</LinearLayout>
+        <Button
+            android:id="@+id/btn_video"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="视频测试"
+            android:textSize="25sp" />
+
+        <Button
+            android:id="@+id/btn_local_video"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="本地视频测试"
+            android:textSize="25sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginRight="10dp"
+        android:orientation="horizontal"
+        android:visibility="gone" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="音乐控制s800："
+            android:textColor="#ffff00"
+            android:textSize="25sp" />
+
+        <Button
+            android:id="@+id/btn_prev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dip"
+            android:text="上一曲" />
+
+        <Button
+            android:id="@+id/btn_play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dip"
+            android:text="播放" />
+
+        <Button
+            android:id="@+id/btn_pause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dip"
+            android:text="暂停" />
+
+        <Button
+            android:id="@+id/btn_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dip"
+            android:text="下一曲" />
+    </LinearLayout>
+
 </RelativeLayout>

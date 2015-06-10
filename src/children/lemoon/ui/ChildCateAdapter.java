@@ -24,7 +24,6 @@ import children.lemoon.R.id;
 import children.lemoon.R.layout;
 import children.lemoon.myrespone.RecommendEntity;
 import children.lemoon.utils.BitmapUtil;
-import children.lemoon.utils.MyImageLoadTask;
 
 import logger.lemoon.Logger;
 
@@ -78,11 +77,11 @@ public class ChildCateAdapter extends BaseAdapter {
 		RecommendEntity re = (RecommendEntity) data.get(paramInt);
 		holder1.title.setText(re.getTitle());
 		holder1.icon.setImageBitmap(defaultIcon);
-		MyImageLoadTask imgLoader = new MyImageLoadTask(holder1.icon, mItemWidth, mItemHeight);
-
-		if (!TextUtils.isEmpty(re.getImages())) {
-			imgLoader.execute(new String[] { re.getImages() });
-		}
+//		MyImageLoadTask imgLoader = new MyImageLoadTask(holder1.icon, mItemWidth, mItemHeight);
+//
+//		if (!TextUtils.isEmpty(re.getImages())) {
+//			imgLoader.execute(new String[] { re.getImages() });
+//		}
 
 		return v;
 	}

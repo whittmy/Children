@@ -16,12 +16,11 @@ import children.lemoon.myrespone.RecommendEntity;
 import children.lemoon.myrespone.ResponeChildClassList;
 import children.lemoon.myrespone.ResponePList;
 import children.lemoon.player.org.Player;
+import children.lemoon.player.org.MyHorizontalScrollView.CurrentImageChangeListener;
+import children.lemoon.player.org.MyHorizontalScrollView.OnItemClickListener;
 import children.lemoon.reqbased.BaseReqActivity;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.utils.HttpManger;
-import children.lemoon.ui.MyHorizontalScrollView.CurrentImageChangeListener;
-import children.lemoon.ui.MyHorizontalScrollView.OnItemClickListener;
-import children.lemoon.utils.MyImageLoadTask;
 
 import android.app.Activity;
 import android.content.Context;

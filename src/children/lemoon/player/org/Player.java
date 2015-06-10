@@ -11,6 +11,7 @@ import java.util.Timer;
 import com.dd.database.DatabaseManager;
 import com.dd.database.QueryExecutor;
 import com.dd.my.MvCacheMgrDAO;
+import com.devsmart.android.ui.HorizontalListView;
 
 import children.lemoon.Configer;
 import children.lemoon.R;
@@ -21,12 +22,7 @@ import children.lemoon.myrespone.ResponePList;
 import children.lemoon.reqbased.BaseReqActivity;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.utils.HttpManger;
-import children.lemoon.ui.HorizontalScrollViewAdapter;
-import children.lemoon.ui.MyHorizontalScrollView;
-import children.lemoon.ui.MyHorizontalScrollView.CurrentImageChangeListener;
-import children.lemoon.ui.MyHorizontalScrollView.OnItemClickListener;
-import children.lemoon.ui.MyHorizontalScrollView.TouchListener;
-import children.lemoon.utils.MyImageLoadTask;
+ 
 
 import logger.lemoon.Logger;
 
@@ -54,7 +50,13 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnFocusChangeListener;
+import android.view.View.OnTouchListener;
 
+import android.widget.AbsListView.OnScrollListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -96,7 +98,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	int mRunMode = Configer.RunMode.MODE_NETWORK; 
 	
 	private LinkedList<PlayItemEntity> mData = new LinkedList<PlayItemEntity>();
-	private MyHorizontalScrollView mHorizontalScrollView;
+	public HorizontalListView mHListView;
 	private HorizontalScrollViewAdapter mAdapter;
 	private int mCurPg = 0;
 	
@@ -162,7 +164,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		
 		
 		mPref.edit().putInt(SP_CUR_PAGE+"_"+mCurCateId, mCurPg).commit();
-		mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, mHorizontalScrollView.getClickPos()).commit();
+		mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, mHListView.getClickPos()).commit();
 	}
 	
 	private void recoverState(){
@@ -209,9 +211,10 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 							mCurPg = curpg;
 						}
 						
-//						mHorizontalScrollView.setClickPos(clickid);
-//						mHorizontalScrollView.initDatas(mAdapter);
-						initHScrollView(clickid);
+//						mHListView.setClickPos(clickid);
+//						mHListView.initDatas(mAdapter);
+//						initHScrollView(clickid);
+						mHListView.setClickPos(clickid);
 						
 						if(mData.size() == 0){
 							queryPlayList(mCurPg+1);
@@ -240,36 +243,53 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		mPref = getSharedPreferences("sv", 0);
 		
 		
-		mHorizontalScrollView = (MyHorizontalScrollView) findViewById(R.id.id_horizontalScrollView);
-		mAdapter = new HorizontalScrollViewAdapter(this, mHorizontalScrollView, mData);
-		//添加触摸回调，
-		mHorizontalScrollView.setTouchListener(new TouchListener() {
+		mHListView = (HorizontalListView) findViewById(R.id.id_horizontalScrollView);
+		mAdapter = new HorizontalScrollViewAdapter(this, mData);
+		mHListView.setAdapter(mAdapter);
+		
+		mHListView.setOnItemClickListener(new OnItemClickListener() {
 			@Override
-			public void onHadToched() {
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 				// TODO Auto-generated method stub
-				ctrlShowMgr();
+				Log.e("", "=================== onitemclick :"+ arg2);
+				mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, arg2).commit();
+				myPlay(arg2);
 			}
 		});
-		
-		// 添加滚动回调
-		mHorizontalScrollView.setCurrentImageChangeListener(new CurrentImageChangeListener() {
-			public void onCurrentImgChanged(int position, View viewIndicator) {
-				Log.e("", "!!!!!!!total=" + mAdapter.getCount() + ", position=" + position);
-				next(false);
+		mHListView.setOnTouchListener(new OnTouchListener() {
+			long mLasttm = 0;
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				// TODO Auto-generated method stub
+				int action = event.getAction();
+				if(action==MotionEvent.ACTION_DOWN || action==MotionEvent.ACTION_MOVE){
+					if(System.currentTimeMillis()-mLasttm > 1500){
+						mLasttm = System.currentTimeMillis();
+						ctrlShowMgr();
+					}
+				}
+				return false;
+			}
+		});
+ 
+		mHListView.setOnScrollListener(new OnScrollListener() {
+			@Override
+			public void onScrollStateChanged(AbsListView view, int scrollState) {
+				// TODO Auto-generated method stub
+			}
+			
+			@Override
+			public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+				// TODO Auto-generated method stub
+				Log.e("", "onScroll: "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
+
+				if(firstVisibleItem+visibleItemCount+12 >= totalItemCount){	//注意next函数，尽可能一致
+					queryPlayList(mCurPg+1);
+				}
+				 
 			}
 		});
 
-		// 添加点击回调
-		mHorizontalScrollView.setOnItemClickListener(new OnItemClickListener() {
-			public void onClick(View view, int position) {
-				//view.setBackgroundColor(Color.parseColor("#AA024DA4"));
-				mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, mHorizontalScrollView.getClickPos()).commit();
-				
-				myPlay(position);
-			}
-		});
-		
-		
 		registerMyRcv();
 		initSurfaceView();
 		initMyView();
@@ -390,7 +410,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 					super.runPersonelLogic();
 					try {
 						mHandler.sendEmptyMessage(CMD_REFRESH_SEEKBAR);
-						Log.e("", "seekbar...refresh...");
+						//Log.e("", "seekbar...refresh...");
 
 						sleep(1000);
 					} catch (InterruptedException e) {
@@ -472,26 +492,42 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	
 	private void prev(boolean bplay){
 		if(bplay){
-			if(mHorizontalScrollView.getClickPos()  <=  0)
+//			if(mHListView.getClickPos()  <=  0)
+//				return;
+//			mHListView.prev();
+//			myPlay(mHListView.getClickPos());
+			int pos = mHListView.getClickPos();
+			if(pos <= 0 || mAdapter==null)
 				return;
-			mHorizontalScrollView.prev();
-			myPlay(mHorizontalScrollView.getClickPos());
+			mHListView.setClickPos(pos-1);
+			myPlay(pos-1);
 		}
 	}
 	
 	private void next(boolean bplay){
 		if(mRunMode == Configer.RunMode.MODE_NETWORK){
-			if (mAdapter.getCount() - mHorizontalScrollView.getItemCntConst() - (mHorizontalScrollView.getScrollPos() + 1) < 12) {
+			if (mAdapter.getCount() - mHListView.getClickPos()  < 12) {  //这儿与onscroll事件是有些不一样的哦
 				Log.e("", "!!!!!! begin to load pg: " + (mCurPg + 1));
 				queryPlayList(mCurPg + 1);
 			}
 		}
 		
 		if(bplay){
-			if(mHorizontalScrollView.getClickPos()+1 >= mData.size())
+//			if(mHListView.getClickPos()+1 >= mData.size())
+//				return;
+//			mHListView.next();
+//			myPlay(mHListView.getClickPos());
+			
+			int pos = mHListView.getClickPos() + 1; 
+			if(pos >= mData.size() || mAdapter==null)
 				return;
-			mHorizontalScrollView.next();
-			myPlay(mHorizontalScrollView.getClickPos());
+			mHListView.setClickPos(pos);
+			
+			//仅当隐藏时，其才将当前播放的滚动到开头，避免用户在选择影片时，其突然跳到正在播放的条目
+			if(mFill1.getVisibility() == View.INVISIBLE)
+				mHListView.setSelection(pos);
+			
+ 			myPlay(pos);
 		}
 	}
  
@@ -630,9 +666,10 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 						@Override
 						public void run() {
 							// TODO Auto-generated method stub
-							//mHorizontalScrollView.initDatas(mAdapter);
-							initHScrollView(-1);
-							myPlay(mHorizontalScrollView.getClickPos());		
+							//mHListView.initDatas(mAdapter);
+							//initHScrollView(-1);
+							mHListView.setClickPos(0);
+							myPlay(mHListView.getClickPos());		
 						}
 					});
 				}
@@ -670,13 +707,14 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			return;
 
 		mData.addAll(plist.getpList());
-		//mHorizontalScrollView.initDatas(mAdapter);
-		initHScrollView(-1);
+		//mHListView.initDatas(mAdapter);
+		//initHScrollView(-1);
+		mHListView.setClickPos(0);
 		mCurPg++;
 
 		if(	mBfirstData){
 			mBfirstData = false;
-			myPlay(mHorizontalScrollView.getClickPos());
+			myPlay(mHListView.getClickPos());
 		}
 		/////////// 放在底部  每次请求要保存状态，保存状态  /////////////
 		saveState(plist.getpList());
@@ -704,15 +742,17 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	}
 
  
-	private void initHScrollView(int clickpos){
-		if(clickpos >= 0)
-			mHorizontalScrollView.setClickPos(clickpos);
-		mHorizontalScrollView.initDatas(mAdapter);
-	}
+//	private void initHScrollView(int clickpos){
+//		if(clickpos >= 0)
+//			mHListView.setClickPos(clickpos);
+//		mHListView.initDatas(mAdapter);
+//	}
 	
 	
 	// ------------------- player control ---------------------
 	public void myPlay(int curClickPos){
+		if(curClickPos == -1)
+			curClickPos = 0;
 		if(mData==null || curClickPos>=mData.size())
 			return;
 		
@@ -832,8 +872,9 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		@Override
 		public void onPrepared(MediaPlayer mPlayer) {
 			Logger.LOGD(TAG, "onPrepared called");
- 
-			mMvTitle.setText(mData.get(mHorizontalScrollView.getClickPos()).getName());
+			
+			int pos = mHListView.getClickPos()==-1?0:mHListView.getClickPos();
+			mMvTitle.setText(mData.get(pos).getName());
 			mDuration = mPlayer.getDuration();
 			if(mDuration == 0)
 				mDuration = 1200;
@@ -879,7 +920,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 					}
 					mHeaderContainer.setVisibility(View.INVISIBLE);
 					mCtrlContainer.setVisibility(View.INVISIBLE);
-					mHorizontalScrollView.setVisibility(View.INVISIBLE);	
+					mHListView.setVisibility(View.INVISIBLE);	
 					mFill2.setVisibility(View.INVISIBLE);
 					mFill1.setVisibility(View.INVISIBLE);
 			 
@@ -897,8 +938,8 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 					
 					mHeaderContainer.setVisibility(View.VISIBLE);
 					mCtrlContainer.setVisibility(View.VISIBLE);
-					mHorizontalScrollView.setVisibility(View.VISIBLE);
-
+					mHListView.setVisibility(View.VISIBLE);
+					//mAdapter.notifyDataSetChanged();
 					//解决初始控件设为invisible，在视频播放后，通过setvisible无法使控件显示的问题。
 					mFill1.getParent().requestTransparentRegion(mSurfaceView);
 					ctrlShowMgr();
@@ -909,7 +950,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	}
 	private Runnable ctrBarHidding = new Runnable() {
 		public void run() {
-			Log.e("", "ctrBarHidding...");
+			//Log.e("", "ctrBarHidding...");
 			mBCtrlbarShow = true;
 			toggleClick();
 			mHandler.removeCallbacks(ctrBarHidding); //执行一次就取消

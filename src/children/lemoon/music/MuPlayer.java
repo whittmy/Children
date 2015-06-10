@@ -3,6 +3,7 @@ package children.lemoon.music;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import android.animation.ObjectAnimator;
 import android.animation.TimeInterpolator;
@@ -31,6 +32,7 @@ import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -53,6 +55,11 @@ public class MuPlayer extends Activity {
 	ListView mVSongList;
 	SongListAdapter mAdapter;
 
+	private int[] mBgImg = {
+			R.drawable.mu_bg, 
+			R.drawable.mu_bg2,
+			R.drawable.mu_bg3};
+	
 	public static LrcView mlrcView; // 自定义歌词视图, 由service更新
 	ImageView mImgDisc;
 	// Animation mAnimDisc;
@@ -87,6 +94,10 @@ public class MuPlayer extends Activity {
 	}
 
 	void initView() {
+		RelativeLayout mubg = (RelativeLayout)findViewById(R.id.mubg);
+		mubg.setBackgroundResource(mBgImg[new Random().nextInt(mBgImg.length)]);
+		
+		
 		mTvmuName = (TextView) findViewById(R.id.mu_title);
 		mTvCate = (TextView) findViewById(R.id.mu_cata);
 
@@ -161,6 +172,8 @@ public class MuPlayer extends Activity {
 				// TODO Auto-generated method stub
 				mVisibleLastidx = firstVisibleItem + visibleItemCount;
 				
+				//这儿会反复执行！！！！！！！！！！！！！，    会反复去取数据， 当播放的时候是这样，这个问题得解决
+				Log.e("", "onScroll:"+firstVisibleItem+", "+visibleItemCount+", "+totalItemCount);
 				// 本地模式不涉及翻页
 				if (mIService != null && mIService.getCurRunMode() == Configer.RunMode.MODE_LOCAL)
 					return;
@@ -289,6 +302,35 @@ public class MuPlayer extends Activity {
 			unbindService(mConnection);
 	}
 
+	
+	public enum AnimAct{
+		ANIM_PLAY, ANIM_PAUSE, ANIM_REPLAY, ANIM_STOP
+	};
+	// flag: 
+	private void animCtrl(AnimAct flag){
+		switch(flag){
+		case ANIM_PLAY://开始
+			// 如果已经暂停，是继续播放
+			if (updateListener.isPause)
+				updateListener.play();
+			else
+				// 否则就是从头开始播放
+				animator.start();
+			break;
+		case ANIM_PAUSE:// 暂停
+			updateListener.pause();
+			break;
+		case ANIM_REPLAY:
+			updateListener.play();
+			animator.end();
+			animator.start();
+			updateListener.pause();
+			break;
+		case ANIM_STOP:
+			animator.end();
+			break;
+		}
+	}
 	// ///////////////////////////////////////////////////////////
 
 	class CtrlBtnClickListener implements OnClickListener {
@@ -315,12 +357,13 @@ public class MuPlayer extends Activity {
 					// mImgDisc.startAnimation(mAnimDisc);
 					// }
 					// 如果已经暂停，是继续播放
-					if (updateListener.isPause)
-						updateListener.play();
-					else
-						// 否则就是从头开始播放
-						animator.start();
-
+//					if (updateListener.isPause)
+//						updateListener.play();
+//					else
+//						// 否则就是从头开始播放
+//						animator.start();
+					animCtrl(AnimAct.ANIM_PLAY);
+					
 					param[0] = "MSG";
 					param[1] = String.format("%d", Configer.PlayerMsg.CONTINUE_MSG);
 				}
@@ -398,10 +441,11 @@ public class MuPlayer extends Activity {
 	public void previous_music() {
 		mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
 
-		updateListener.play();
-		animator.end();
-		animator.start();
-		updateListener.pause();
+//		updateListener.play();
+//		animator.end();
+//		animator.start();
+//		updateListener.pause();
+		animCtrl(AnimAct.ANIM_REPLAY);
 
 		String[] args = new String[2];
 		// args[0] = "listPosition"; args[1] = String.format("%d",
@@ -417,11 +461,11 @@ public class MuPlayer extends Activity {
 	public void next_music() {
 		mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
 
-		updateListener.play();
-		animator.end();
-		animator.start();
-		updateListener.pause();
-
+//		updateListener.play();
+//		animator.end();
+//		animator.start();
+//		updateListener.pause();
+		animCtrl(AnimAct.ANIM_REPLAY);
 		String[] args = new String[2];
 		// args[0] = "listPosition"; args[1] = String.format("%d",
 		// mIService.getCurPos());
@@ -468,11 +512,12 @@ public class MuPlayer extends Activity {
 
 				// 如果已经暂停，是继续播放
 
-				if (updateListener.isPause)
-					updateListener.play();
-				else
-					// 否则就是从头开始播放
-					animator.start();
+//				if (updateListener.isPause)
+//					updateListener.play();
+//				else
+//					// 否则就是从头开始播放
+//					animator.start();
+				animCtrl(AnimAct.ANIM_PLAY);
 
 			} else if (action.equals(Configer.Action.ACT_UPDATE_ACTION)) {
 				// 播放操作部分的界面更新部分放在这儿
@@ -496,20 +541,22 @@ public class MuPlayer extends Activity {
 					// mImgDisc.startAnimation(mAnimDisc);
 					// }
 
-					// 如果已经暂停，是继续播放
-					if (updateListener.isPause)
-						updateListener.play();
-					else { // 否则就是从头开始播放
-						animator.start();
-					}
+//					// 如果已经暂停，是继续播放
+//					if (updateListener.isPause)
+//						updateListener.play();
+//					else { // 否则就是从头开始播放
+//						animator.start();
+//					}
+					animCtrl(AnimAct.ANIM_PLAY);
 				}
 			} else if (action.equals(Configer.Action.ACT_UPDATE_PlAYLIST)) {
 				mAdapter.notifyDataSetChanged();
 			} else if (action.equals(Configer.Action.ACT_CUR_FINISHED)) {
-				updateListener.play();
-				animator.end();
-				animator.start();
-				updateListener.pause();
+//				updateListener.play();
+//				animator.end();
+//				animator.start();
+//				updateListener.pause();
+				animCtrl(AnimAct.ANIM_REPLAY);
 			}
 		}
 	}

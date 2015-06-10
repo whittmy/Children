@@ -55,11 +55,8 @@ public class MuPlayer extends Activity {
 	ListView mVSongList;
 	SongListAdapter mAdapter;
 
-	private int[] mBgImg = {
-			R.drawable.mu_bg, 
-			R.drawable.mu_bg2,
-			R.drawable.mu_bg3};
-	
+	private int[] mBgImg = { R.drawable.mu_bg, R.drawable.mu_bg2, R.drawable.mu_bg3 };
+
 	public static LrcView mlrcView; // 自定义歌词视图, 由service更新
 	ImageView mImgDisc;
 	// Animation mAnimDisc;
@@ -94,10 +91,9 @@ public class MuPlayer extends Activity {
 	}
 
 	void initView() {
-		RelativeLayout mubg = (RelativeLayout)findViewById(R.id.mubg);
+		RelativeLayout mubg = (RelativeLayout) findViewById(R.id.mubg);
 		mubg.setBackgroundResource(mBgImg[new Random().nextInt(mBgImg.length)]);
-		
-		
+
 		mTvmuName = (TextView) findViewById(R.id.mu_title);
 		mTvCate = (TextView) findViewById(R.id.mu_cata);
 
@@ -119,15 +115,6 @@ public class MuPlayer extends Activity {
 
 		// 唱片动画
 		mImgDisc = (ImageView) findViewById(R.id.mu_disc);
-
-		// mAnimDisc = AnimationUtils.loadAnimation(this, R.anim.disc);
-		// LinearInterpolator lin = new LinearInterpolator();
-		// mAnimDisc.setInterpolator(lin);
-
-		// anim = ObjectAnimator.ofFloat(mImgDisc, "rotation", 0, 360);
-		// anim.setDuration(1000);
-		// anim.setRepeatCount(ValueAnimator.INFINITE);
-		// anim.setRepeatMode(ObjectAnimator.RESTART);
 
 		animator = ObjectAnimator.ofFloat(mImgDisc, "rotation", 0, 360);
 		animator.setRepeatCount(ValueAnimator.INFINITE);
@@ -171,9 +158,9 @@ public class MuPlayer extends Activity {
 			public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 				// TODO Auto-generated method stub
 				mVisibleLastidx = firstVisibleItem + visibleItemCount;
-				
-				//这儿会反复执行！！！！！！！！！！！！！，    会反复去取数据， 当播放的时候是这样，这个问题得解决
-				Log.e("", "onScroll:"+firstVisibleItem+", "+visibleItemCount+", "+totalItemCount);
+
+				// 这儿会反复执行！！！！！！！！！！！！！， 会反复去取数据， 当播放的时候是这样，这个问题得解决
+				Log.e("", "onScroll:" + firstVisibleItem + ", " + visibleItemCount + ", " + totalItemCount);
 				// 本地模式不涉及翻页
 				if (mIService != null && mIService.getCurRunMode() == Configer.RunMode.MODE_LOCAL)
 					return;
@@ -184,14 +171,10 @@ public class MuPlayer extends Activity {
 				}
 			}
 		});
-
-		// stop
-		// mImgDisc.clearAnimation();
 	}
 
-	
 	int mVisibleLastidx = 0;
-	
+
 	private IMUService mIService = null;
 	ServiceConnection mConnection = new ServiceConnection() {
 		public void onServiceDisconnected(ComponentName name) {
@@ -302,14 +285,13 @@ public class MuPlayer extends Activity {
 			unbindService(mConnection);
 	}
 
-	
-	public enum AnimAct{
+	public enum AnimAct {
 		ANIM_PLAY, ANIM_PAUSE, ANIM_REPLAY, ANIM_STOP
 	};
-	// flag: 
-	private void animCtrl(AnimAct flag){
-		switch(flag){
-		case ANIM_PLAY://开始
+	// flag:
+	private void animCtrl(AnimAct flag) {
+		switch (flag) {
+		case ANIM_PLAY:// 开始
 			// 如果已经暂停，是继续播放
 			if (updateListener.isPause)
 				updateListener.play();
@@ -331,44 +313,28 @@ public class MuPlayer extends Activity {
 			break;
 		}
 	}
-	// ///////////////////////////////////////////////////////////
 
+	// ///////////////////////////////////////////////////////////
 	class CtrlBtnClickListener implements OnClickListener {
 		@Override
 		public void onClick(View v) {
 			// TODO Auto-generated method stub
-
 			switch (v.getId()) {
 			case R.id.btn_prev:
 				previous_music();
 				break;
 			case R.id.btn_ok:
-				String[] param = new String[2];
+				String[] param = null;
 				if (mIService.isPlaying()) {
 					mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
-					// 暂停
-					updateListener.pause();
-
-					param[0] = "MSG";
-					param[1] = String.format("%d", Configer.PlayerMsg.PAUSE_MSG);
+					animCtrl(AnimAct.ANIM_PAUSE);
+					param = new String[]{"MSG", String.format("%d", Configer.PlayerMsg.PAUSE_MSG)};
 				} else {
 					mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
-					// if (mAnimDisc != null) {
-					// mImgDisc.startAnimation(mAnimDisc);
-					// }
-					// 如果已经暂停，是继续播放
-//					if (updateListener.isPause)
-//						updateListener.play();
-//					else
-//						// 否则就是从头开始播放
-//						animator.start();
 					animCtrl(AnimAct.ANIM_PLAY);
-					
-					param[0] = "MSG";
-					param[1] = String.format("%d", Configer.PlayerMsg.CONTINUE_MSG);
+					param = new String[]{"MSG", String.format("%d", Configer.PlayerMsg.CONTINUE_MSG)};
 				}
 				Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, param);
-
 				break;
 			case R.id.btn_next:
 				next_music();
@@ -377,7 +343,6 @@ public class MuPlayer extends Activity {
 				break;
 			}
 		}
-
 	}
 
 	/**
@@ -395,12 +360,10 @@ public class MuPlayer extends Activity {
 		}
 
 		@Override
-		public void onStartTrackingTouch(SeekBar seekBar) {
-		}
+		public void onStartTrackingTouch(SeekBar seekBar) { }
 
 		@Override
-		public void onStopTrackingTouch(SeekBar seekBar) {
-		}
+		public void onStopTrackingTouch(SeekBar seekBar) { }
 	}
 
 	/**
@@ -409,13 +372,7 @@ public class MuPlayer extends Activity {
 	 * @param progress
 	 */
 	public void audioTrackChange(int progress) {
-		String[] args = new String[4];
-		// args[0] = "listPosition"; args[1] = String.format("%d",
-		// mIService.getCurPos());
-		args[0] = "MSG";
-		args[1] = String.format("%d", Configer.PlayerMsg.PROGRESS_CHANGE);
-		args[2] = "progress";
-		args[3] = String.format("%d", progress);
+		String[] args = { "MSG", String.format("%d", Configer.PlayerMsg.PROGRESS_CHANGE), "progress", String.format("%d", progress) };
 		Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, args);
 	}
 
@@ -427,11 +384,7 @@ public class MuPlayer extends Activity {
 		// repeat_none();
 		mIService.setCurPos(myPos);
 
-		String[] args = new String[2];
-		// args[0] = "listPosition"; args[1] = String.format("%d",
-		// mIService.getCurPos());
-		args[0] = "MSG";
-		args[1] = String.format("%d", Configer.PlayerMsg.PLAY_MSG);
+		String[] args = { "MSG", String.format("%d", Configer.PlayerMsg.PLAY_MSG) };
 		Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, args);
 	}
 
@@ -441,17 +394,9 @@ public class MuPlayer extends Activity {
 	public void previous_music() {
 		mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
 
-//		updateListener.play();
-//		animator.end();
-//		animator.start();
-//		updateListener.pause();
 		animCtrl(AnimAct.ANIM_REPLAY);
 
-		String[] args = new String[2];
-		// args[0] = "listPosition"; args[1] = String.format("%d",
-		// mIService.getCurPos());
-		args[0] = "MSG";
-		args[1] = String.format("%d", Configer.PlayerMsg.PRIVIOUS_MSG);
+		String[] args = { "MSG", String.format("%d", Configer.PlayerMsg.PRIVIOUS_MSG) };
 		Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, args);
 	}
 
@@ -461,16 +406,9 @@ public class MuPlayer extends Activity {
 	public void next_music() {
 		mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
 
-//		updateListener.play();
-//		animator.end();
-//		animator.start();
-//		updateListener.pause();
 		animCtrl(AnimAct.ANIM_REPLAY);
-		String[] args = new String[2];
-		// args[0] = "listPosition"; args[1] = String.format("%d",
-		// mIService.getCurPos());
-		args[0] = "MSG";
-		args[1] = String.format("%d", Configer.PlayerMsg.NEXT_MSG);
+
+		String[] args = { "MSG", String.format("%d", Configer.PlayerMsg.NEXT_MSG) };
 		Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, args);
 	}
 
@@ -485,11 +423,11 @@ public class MuPlayer extends Activity {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 			if (action.equals(Configer.Action.ACT_MUSIC_CURRENT)) {
-				// int currentTime = intent.getIntExtra("currentTime", -1);
 				int currentTime = mIService.getCurTm();
 				mTvCurTm.setText(MediaUtil.formatTime(currentTime));
 				mSeekBar.setProgress(currentTime);
-			} else if (action.equals(Configer.Action.ACT_MUSIC_DURATION)) {
+			} 
+			else if (action.equals(Configer.Action.ACT_MUSIC_DURATION)) {
 				// 更新总时间，可以认为是首次播放
 				mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
 
@@ -499,71 +437,41 @@ public class MuPlayer extends Activity {
 
 				mVSongList.setSelection(mIService.getCurPos());
 				mAdapter.notifyDataSetChanged(); // 为了让选中项文字颜色改变
-				
-				if(mIService.getCurPos() >= mVisibleLastidx){
-					mVSongList.setSelection(mIService.getCurPos()); // 为了使选中项条目滚动到可见区域, 但是总是会出现在当期可视区域的第一个，就意味着点击一下，选择中的调到第一个了。
+
+				if (mIService.getCurPos() >= mVisibleLastidx) {
+					mVSongList.setSelection(mIService.getCurPos()); // 为了使选中项条目滚动到可见区域,
+																	// 但是总是会出现在当期可视区域的第一个，就意味着点击一下，选择中的调到第一个了。
 					mVSongList.requestFocus();
 				}
-
-				// start，启动播放动画
-				// if (mAnimDisc != null) {
-				// mImgDisc.startAnimation(mAnimDisc);
-				// }
-
-				// 如果已经暂停，是继续播放
-
-//				if (updateListener.isPause)
-//					updateListener.play();
-//				else
-//					// 否则就是从头开始播放
-//					animator.start();
 				animCtrl(AnimAct.ANIM_PLAY);
-
-			} else if (action.equals(Configer.Action.ACT_UPDATE_ACTION)) {
+			}
+			else if (action.equals(Configer.Action.ACT_UPDATE_ACTION)) {
 				// 播放操作部分的界面更新部分放在这儿
 				if (mIService.getCurPos() >= 0) {
 					mTvmuName.setText(mIService.getCurTitle());
-					// musicArtist.setText(mp3Infos.get(listPosition).getArtist());
 				}
 				mTvDur.setText(MediaUtil.formatTime(mIService.getDuration()));
 
 				if (mIService.isPlaying()) {
 					mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
-					// if (mAnimDisc != null) {
-					// //stop
-					// mImgDisc.clearAnimation();
-					// }
-
-					updateListener.pause();
+					animCtrl(AnimAct.ANIM_PAUSE);
 				} else {
 					mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
-					// if (mAnimDisc != null) {
-					// mImgDisc.startAnimation(mAnimDisc);
-					// }
-
-//					// 如果已经暂停，是继续播放
-//					if (updateListener.isPause)
-//						updateListener.play();
-//					else { // 否则就是从头开始播放
-//						animator.start();
-//					}
 					animCtrl(AnimAct.ANIM_PLAY);
 				}
-			} else if (action.equals(Configer.Action.ACT_UPDATE_PlAYLIST)) {
+			} 
+			else if (action.equals(Configer.Action.ACT_UPDATE_PlAYLIST)) {
 				mAdapter.notifyDataSetChanged();
-			} else if (action.equals(Configer.Action.ACT_CUR_FINISHED)) {
-//				updateListener.play();
-//				animator.end();
-//				animator.start();
-//				updateListener.pause();
+			}
+			else if (action.equals(Configer.Action.ACT_CUR_FINISHED)) {
 				animCtrl(AnimAct.ANIM_REPLAY);
 			}
 		}
 	}
 
-
 	ObjectAnimator animator;
 	MyAnimatorUpdateListener updateListener = new MyAnimatorUpdateListener();
+
 	class MyAnimatorUpdateListener implements AnimatorUpdateListener {
 		/**
 		 * 暂停状态
@@ -601,14 +509,15 @@ public class MuPlayer extends Activity {
 		public void play() {
 			isPause = false;
 			isPaused = false;
-			
-			if(mCd != null){
+
+			if (mCd != null) {
 				mCd.cancel();
 				mCd = null;
 			}
 		}
 
 		CountDownTimer mCd;
+
 		@Override
 		public void onAnimationUpdate(ValueAnimator animation) {
 			/**
@@ -627,18 +536,18 @@ public class MuPlayer extends Activity {
 					});
 					isPaused = true;
 				}
-				
-				//rocking: avoid high-cpu
-				if(mCd != null){
+
+				// rocking: avoid high-cpu
+				if (mCd != null) {
 					return;
 				}
-				
-				Log.e("", "================ countdowntimer: getFrameDelay="+ValueAnimator.getFrameDelay());
+
+				Log.e("", "================ countdowntimer: getFrameDelay=" + ValueAnimator.getFrameDelay());
 				// 每隔动画播放的时间，我们都会将播放时间往回调整，以便重新播放的时候接着使用这个时间,同时也为了让整个动画不结束
-				long tm =  ValueAnimator.getFrameDelay();  //10ms, high-cpu
-				
-				//rocking: avoid high-cpu
-				tm = 1000;		//0.5s
+				long tm = ValueAnimator.getFrameDelay(); // 10ms, high-cpu
+
+				// rocking: avoid high-cpu
+				tm = 1000; // 0.5s
 				mCd = new CountDownTimer(tm, tm) {
 					@Override
 					public void onTick(long millisUntilFinished) {
@@ -648,7 +557,7 @@ public class MuPlayer extends Activity {
 					public void onFinish() {
 						mCd.cancel();
 						mCd = null;
-						animator.setCurrentPlayTime(mCurrentPlayTime);       //high-cpu
+						animator.setCurrentPlayTime(mCurrentPlayTime); // high-cpu
 					}
 				}.start();
 			} else {
@@ -656,7 +565,5 @@ public class MuPlayer extends Activity {
 				animation.setInterpolator(null);
 			}
 		}
-
 	}
-
 }

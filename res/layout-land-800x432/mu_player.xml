@@ -128,7 +128,7 @@
  	
  	<LinearLayout 
  	    android:id="@+id/seekbar_contaner"
- 	    android:layout_width="fill_parent"
+ 	    android:layout_width="match_parent"
  	    android:layout_height="wrap_content"
  	    android:layout_centerHorizontal="true"
  	    
@@ -140,9 +140,10 @@
   	    android:orientation="horizontal">
  	    <TextView 
  	        android:id="@+id/curtime"
- 	        android:layout_width="wrap_content"
+ 	        android:layout_width="60dp"
  	        android:layout_height="wrap_content"
  	        android:layout_marginLeft="10dp"
+ 	        android:gravity="right"
  	        android:text="00:00" />
 
  	    <SeekBar
@@ -156,8 +157,9 @@
 	        
 	    <TextView 
  	        android:id="@+id/dur"
- 	        android:layout_width="wrap_content"
+ 	        android:layout_width="60dp"
  	        android:layout_height="wrap_content"
+ 	        android:gravity="left"
  	        android:text="00:00" />
  	</LinearLayout>
 </RelativeLayout>

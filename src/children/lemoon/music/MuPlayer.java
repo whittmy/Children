@@ -159,6 +159,8 @@ public class MuPlayer extends Activity {
 			@Override
 			public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 				// TODO Auto-generated method stub
+				mVisibleLastidx = firstVisibleItem + visibleItemCount;
+				
 				// 本地模式不涉及翻页
 				if (mIService != null && mIService.getCurRunMode() == Configer.RunMode.MODE_LOCAL)
 					return;
@@ -174,6 +176,9 @@ public class MuPlayer extends Activity {
 		// mImgDisc.clearAnimation();
 	}
 
+	
+	int mVisibleLastidx = 0;
+	
 	private IMUService mIService = null;
 	ServiceConnection mConnection = new ServiceConnection() {
 		public void onServiceDisconnected(ComponentName name) {
@@ -451,9 +456,10 @@ public class MuPlayer extends Activity {
 				mVSongList.setSelection(mIService.getCurPos());
 				mAdapter.notifyDataSetChanged(); // 为了让选中项文字颜色改变
 				
-				
-				mVSongList.setSelection(mIService.getCurPos()); // 为了使选中项条目滚动到可见区域, 但是总是会出现在当期可视区域的第一个，就意味着点击一下，选择中的调到第一个了。
-				mVSongList.requestFocus();
+				if(mIService.getCurPos() >= mVisibleLastidx){
+					mVSongList.setSelection(mIService.getCurPos()); // 为了使选中项条目滚动到可见区域, 但是总是会出现在当期可视区域的第一个，就意味着点击一下，选择中的调到第一个了。
+					mVSongList.requestFocus();
+				}
 
 				// start，启动播放动画
 				// if (mAnimDisc != null) {

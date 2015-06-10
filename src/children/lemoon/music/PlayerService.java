@@ -179,6 +179,8 @@ public class PlayerService extends BaseReqService {
 	// 每次startService走这步，(如果之前未运行，则先oncreate，否则直接该函数)
 	@Override
 	public void onStart(Intent intent, int startId) {
+		if(intent == null || mData==null)
+			return;
 		Log.e(TAG, "Service onStart, mData.size="+mData.size());
 		
 		String localpath = null;

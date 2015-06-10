@@ -192,11 +192,16 @@ public class MuPlayer extends Activity {
 			mVSongList.setAdapter(mAdapter);
 
 			if (mIService.isPlaying()) {
+				animCtrl(AnimAct.ANIM_PLAY);
 				mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
 			} else {
 				mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
 			}
 			mTvmuName.setText(mIService.getCurTitle());
+			mTvCurTm.setText(MediaUtil.formatTime(mIService.getCurTm()));
+			mTvDur.setText(MediaUtil.formatTime(mIService.getDuration()));
+			mSeekBar.setMax(mIService.getDuration());
+			mSeekBar.setProgress(mIService.getCurTm());
 		}
 	};
 

@@ -225,7 +225,15 @@ public class MuPlayer extends Activity {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.mu_player);
-
+		
+		findViewById(R.id.go_back).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				finish();
+			}
+		});
+		
 		initView();
 
 	}

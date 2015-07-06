@@ -10,6 +10,7 @@ import java.util.List;
 
 import children.lemoon.Configer;
 import children.lemoon.R;
+import children.lemoon.categrid.MoviesGridActivity;
 import children.lemoon.music.MuPlayer;
 import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.RecommendEntity;
@@ -21,6 +22,7 @@ import children.lemoon.player.org.MyHorizontalScrollView.OnItemClickListener;
 import children.lemoon.reqbased.BaseReqActivity;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.utils.HttpManger;
+import children.lemoon.ui.loading.CustomProgressDialog;
 
 import android.app.Activity;
 import android.content.Context;
@@ -65,6 +67,22 @@ public class MainActivity extends Activity{
 		
 		findViewById(R.id.btn_home).setOnClickListener(listener);
 		
+		
+		findViewById(R.id.btn_1).setOnClickListener(listener);
+		findViewById(R.id.btn_2).setOnClickListener(listener);
+		findViewById(R.id.btn_3).setOnClickListener(listener);
+		findViewById(R.id.btn_4).setOnClickListener(listener);
+		findViewById(R.id.btn_5).setOnClickListener(listener);
+		findViewById(R.id.btn_6).setOnClickListener(listener);
+		findViewById(R.id.btn_7).setOnClickListener(listener);
+		findViewById(R.id.btn_8).setOnClickListener(listener);
+		findViewById(R.id.btn_9).setOnClickListener(listener);	
+		findViewById(R.id.btn_10).setOnClickListener(listener);	
+		
+		
+//		CustomProgressDialog dlg = CustomProgressDialog.createDialog(this);
+//		dlg.show();
+//		
 	}
 
 
@@ -73,15 +91,27 @@ public class MainActivity extends Activity{
 		public void onClick(View v) {
 			// TODO Auto-generated method stub
 			if(v.getId() == R.id.btn_audio){
-				Intent it = new Intent(MainActivity.this, MuPlayer.class);
-				it.putExtra("curCata",  "_debug:儿童分类");
-				it.putExtra("cataId", 100);
-				MainActivity.this.startActivity(it);
+//				Intent it = new Intent(MainActivity.this, MuPlayer.class);
+//				it.putExtra("curCata",  "_debug:儿童分类");
+//				it.putExtra("cataId", 100);
+//				MainActivity.this.startActivity(it);
+				
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata", "国学教育");
+				it.putExtra("cataId", 1000);				
+				startActivity(it);				
+				
+				
 			}
 			else if(v.getId() == R.id.btn_home){
-				Intent i = new Intent(Intent.ACTION_VIEW);
-				i.setData(Uri.parse("http://192.168.2.104/html5/lufylegend.js-lufylegend-1.9.9/examples/demo/rpg/"));
-				startActivity(i);
+				//Intent i = new Intent(Intent.ACTION_VIEW);
+				//i.setData(Uri.parse("http://192.168.2.104/html5/lufylegend.js-lufylegend-1.9.9/examples/demo/rpg/"));
+				
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata",  "_debug:儿童分类");
+				it.putExtra("cataId", 1001);				
+				
+				startActivity(it);
 			}
 			else if(v.getId() == R.id.btn_local){
 				Intent it = new Intent(MainActivity.this, MuPlayer.class);
@@ -123,6 +153,76 @@ public class MainActivity extends Activity{
 				args[0] = "MSG"; args[1]= String.format("%d", Configer.PlayerMsg.PRIVIOUS_MSG);
 				Configer.sendNotice(MainActivity.this, Configer.Action.SVR_CTL_ACTION, args);
 			}
+			else if(v.getId() == R.id.btn_1){
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata",  "生活常识");
+				it.putExtra("cataId", 10000009);				
+				
+				startActivity(it);
+			}
+			else if(v.getId() == R.id.btn_2){
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata",  "国学教育");
+				it.putExtra("cataId", 10000009);				
+				
+				startActivity(it);			 
+			}
+			else if(v.getId() == R.id.btn_3){
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata",  "数理思维");
+				it.putExtra("cataId", 10000009);				
+				
+				startActivity(it);				 
+			}
+			else if(v.getId() == R.id.btn_4){
+				//涂鸦
+//				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+//				it.putExtra("curCata",  "");
+//				it.putExtra("cataId", 10000009);				
+//				
+//				startActivity(it);				 
+			}
+			else if(v.getId() == R.id.btn_5){
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata",  "自然科学");
+				it.putExtra("cataId", 10000009);				
+				
+				startActivity(it);				 
+			}
+			else if(v.getId() == R.id.btn_6){
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata",  "语言发展");
+				it.putExtra("cataId", 10000009);				
+				
+				startActivity(it);				 
+			}
+			else if(v.getId() == R.id.btn_10){
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata",  "动画城");
+				it.putExtra("cataId", 10000009);				
+				
+				startActivity(it);				 
+			}			
+			else if(v.getId() == R.id.btn_7){
+				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+				it.putExtra("curCata",  "音乐");
+				it.putExtra("cataId", 10000009);				
+				
+				startActivity(it);		 
+			}
+			else if(v.getId() == R.id.btn_8){
+				//本地内容
+//				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
+//				it.putExtra("curCata",  "本地内容");
+//				it.putExtra("cataId", 10000009);				
+//				
+//				startActivity(it);	
+			}
+			else if(v.getId() == R.id.btn_9){
+				//"设置"
+			}
+			
+			
 		}
 		
 	}

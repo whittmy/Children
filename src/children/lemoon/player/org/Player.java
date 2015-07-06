@@ -174,59 +174,63 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		}
 		
 		//读取数据库， 当然是在子线程中执行的
-		DatabaseManager.getInstance().executeQueryTask(new QueryExecutor() {
-		    @Override
-		    public void run(SQLiteDatabase database) {
-		    	MvCacheMgrDAO udao = new MvCacheMgrDAO(database, Player.this); // your class
-		    	Cursor cursor = udao.selectAll(mCurCateId);
- 		    	if(cursor == null){
-		    		Logger.LOGD("", "have no data to ...");
-		    		return;
-		    	}
- 		    	mData.clear();
-				for(cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()) {
-					PlayItemEntity pie = new PlayItemEntity();
-					pie.setId(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_MID)));
-					pie.setName(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_NAME)));
-					pie.setFileSize(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_FSIZE)));
-					pie.setPlayCnt(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_CNT)));
-					pie.setPic(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_PIC)));
-					pie.setDownUrl(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_URL)));
-					mData.add(pie);
- 		    	} 
-				
-				//加载
-				runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						// TODO Auto-generated method stub
-						int curpg = mPref.getInt(SP_CUR_PAGE+"_"+mCurCateId, -1);
-						int clickid = mPref.getInt(SP_CUR_CLICKID+"_"+mCurCateId, -1);
-						
-						if(curpg==-1 || clickid==-1){
-							mCurPg = 0;
-							clickid = 0;
-						}
-						else{
-							mCurPg = curpg;
-						}
-						
+//		DatabaseManager.getInstance().executeQueryTask(new QueryExecutor() {
+//		    @Override
+//		    public void run(SQLiteDatabase database) {
+//		    	MvCacheMgrDAO udao = new MvCacheMgrDAO(database, Player.this); // your class
+//		    	Cursor cursor = udao.selectAll(mCurCateId);
+// 		    	if(cursor == null){
+//		    		Logger.LOGD("", "have no data to ...");
+//		    		return;
+//		    	}
+// 		    	mData.clear();
+//				for(cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()) {
+//					PlayItemEntity pie = new PlayItemEntity();
+//					pie.setId(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_MID)));
+//					pie.setName(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_NAME)));
+//					pie.setFileSize(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_FSIZE)));
+//					pie.setPlayCnt(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_CNT)));
+//					pie.setPic(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_PIC)));
+//					pie.setDownUrl(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_URL)));
+//					
+//					//rocking-------debug
+//					mData.add(pie);
+// 		    	} 
+//				
+//				//加载
+//				runOnUiThread(new Runnable() {
+//					@Override
+//					public void run() {
+//						// TODO Auto-generated method stub
+//						int curpg = mPref.getInt(SP_CUR_PAGE+"_"+mCurCateId, -1);
+//						int clickid = mPref.getInt(SP_CUR_CLICKID+"_"+mCurCateId, -1);
+//						
+//						if(curpg==-1 || clickid==-1){
+//							mCurPg = 0;
+//							clickid = 0;
+//						}
+//						else{
+//							mCurPg = curpg;
+//						}
+//						
+////						mHListView.setClickPos(clickid);
+////						mHListView.initDatas(mAdapter);
+////						initHScrollView(clickid);
 //						mHListView.setClickPos(clickid);
-//						mHListView.initDatas(mAdapter);
-//						initHScrollView(clickid);
-						mHListView.setClickPos(clickid);
-						
-						if(mData.size() == 0){
-							queryPlayList(mCurPg+1);
-						}
-						else{
-							mBfirstData = false;
-							myPlay(clickid);
-						}						
-					}
-				});
-		    }
-		});
+//						
+//						if(mData.size() == 0){
+//							queryPlayList(mCurPg+1);
+//						}
+//						else{
+//							mBfirstData = false;
+//							myPlay(clickid);
+//						}						
+//					}
+//				});
+//		    }
+//		});
+		
+		queryPlayList(mCurPg+1);
 	}
 	
 	
@@ -242,6 +246,13 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		DatabaseManager.initializeInstance(this);
 		mPref = getSharedPreferences("sv", 0);
 		
+		findViewById(R.id.go_back).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				finish();
+			}
+		});
 		
 		mHListView = (HorizontalListView) findViewById(R.id.id_horizontalScrollView);
 		mAdapter = new HorizontalScrollViewAdapter(this, mData);
@@ -283,7 +294,8 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 				// TODO Auto-generated method stub
 				Log.e("", "onScroll: "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
 
-				if(firstVisibleItem+visibleItemCount+12 >= totalItemCount){	//注意next函数，尽可能一致
+				if(firstVisibleItem+visibleItemCount+12 >= totalItemCount //注意next函数，尽可能一致
+					&& 	mData.size()>=30){ //如果实际数据没有满页（30），说明数据量就不够，何谈下一页，所以要限定。	
 					queryPlayList(mCurPg+1);
 				}
 				 
@@ -679,10 +691,8 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			return true;
 		}
 		else{
-			// mCurCateId
 			HashMap<String, Object> bodyRequest = new HashMap<String, Object>();
-			// String timeStamp = TimeUtil.getTimeStamp();
-			// bodyRequest.put("classid", gameTypeId);
+			bodyRequest.put("id", mCurCateId);
 			bodyRequest.put("pageindex", pgIdx);
 			bodyRequest.put("pagesize", "30");
 

@@ -12,15 +12,30 @@
  	    android:layout_marginTop="0dp"
  	    android:background="#7f000000"
  	    android:orientation="horizontal">
- 	    <TextView 
- 	        android:id="@+id/mu_cata"
- 	        android:layout_width="wrap_content"
- 	        android:layout_height="wrap_content"
- 	        android:text=""
- 	        android:textColor="#ffffff"
- 	        android:textSize="22sp"
- 	        android:paddingLeft="15dip"
- 	        android:layout_gravity="left"/>
+ 	    <LinearLayout
+            android:id="@+id/go_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingLeft="10dp" >
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:src="@drawable/back_icon" 
+                android:layout_gravity="center_vertical"/>
+
+	 	    <TextView 
+	 	        android:id="@+id/mu_cata"
+	 	        android:layout_width="wrap_content"
+	 	        android:layout_height="wrap_content"
+	 	        android:text=""
+	 	        android:textColor="#ffffff"
+	 	        android:textSize="22sp"
+	 	        android:paddingLeft="15dip"
+	 	        android:layout_gravity="left"/>
+        </LinearLayout>	 
+
  	    <ImageView
  	        android:id="@+id/battery"
  	        android:layout_width="wrap_content"
@@ -68,7 +83,8 @@
          <children.lemoon.music.lrc.LrcView
             android:id="@+id/lrcShowView"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent"  />
+            android:layout_height="fill_parent" 
+            android:visibility="gone" />
  	</LinearLayout>
  	
  	

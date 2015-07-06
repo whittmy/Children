@@ -2,9 +2,49 @@ package children.lemoon;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import logger.lemoon.Logger;
 
 public class Configer {
+	public static final int OEM_ID = 2; //lemoon-wifi
+	
+	public static class Res{
+		private static final int default_icon_for_categrid1 = R.drawable.p;
+		private static final int default_icon_for_categrid2 = R.drawable.p;
+		
+		private static final int default_icon_for_player1 = R.drawable.mv_bg_default;
+		private static final int default_icon_for_player2 = R.drawable.mv_bg_default;
+		
+		public static int get_icon_for_categrid(){
+			switch(OEM_ID){
+			case 2:
+				return default_icon_for_categrid1;
+			}
+			return default_icon_for_categrid2;
+		}
+		
+		public static int get_icon_for_player(){
+			switch(OEM_ID){
+			case 2:
+				return default_icon_for_player1;
+			}
+			return default_icon_for_player2;
+		}
+		
+		
+		public static Drawable[] getLoading(Context context){
+			Drawable[] imgs = new Drawable[3];
+			imgs[0] = context.getResources().getDrawable(R.drawable.ic_launcher);
+			imgs[1] = context.getResources().getDrawable(R.drawable.ic_launcher);
+			imgs[2] = context.getResources().getDrawable(R.drawable.ic_launcher);
+			return imgs;
+		}
+	}
+	
+	
+	public static final int REQ_TYPE_CATEINFO = 100;
+	
+	
 	public static final int TYPE_QUICK_ENTRY_TEST = 1001;
 	public static final int TYPE_QUICK_ENTRY_TESTA = 1002;
 	// rocking debug !!!!!!!!!!!
@@ -22,9 +62,12 @@ public class Configer {
 			rt = "http://www.nybgjd.com/misc/livesrc/childcatedata.json";
 			break;
 
+		case REQ_TYPE_CATEINFO:
+			rt = "http://www.nybgjd.com/erge/api2/getresList/";
+			break;
 		case TYPE_QUICK_ENTRY_TEST:
 			rt = "http://10.0.2.2/ci/erge.php/erge/api/getPL/";
-			rt = "http://www.nybgjd.com/erge/api/getPL/";
+			rt = "http://www.nybgjd.com/erge/api2/getPL/";
 			
 			break;
 		case TYPE_QUICK_ENTRY_TESTA:

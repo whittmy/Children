@@ -348,6 +348,13 @@ public class PlayerService extends BaseReqService {
 	private void play(int currentTime) {
 		Log.e(TAG, "Service play arg1:"+currentTime+", mCurrent="+mCurrent+",path="+path);
 		try {
+			if(currentTime>5000 && mediaPlayer!=null && mediaPlayer.getDuration()>0){
+				mediaPlayer.seekTo(currentTime);
+				mediaPlayer.start();
+				return;
+			}
+			
+			
 			initLrc();
 			mediaPlayer.reset();// 把各项参数恢复到初始状态
 			mediaPlayer.setDataSource(path);
@@ -569,10 +576,10 @@ public class PlayerService extends BaseReqService {
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.NEXT_MSG);
 						break;
 					case Configer.PlayerMsg.PROGRESS_CHANGE://进度更新
-						Log.e(TAG, "Service MyReceiver PROGRESS_CHANGE mCurrent="+mCurrent);
+						Log.e(TAG, "Service MyReceiver PROGRESS_CHANGE mCurrent="+mCurrent+",porgress:"+intent.getStringExtra("progress"));
 						Message msg = new Message();
 						msg.what = Configer.PlayerMsg.PROGRESS_CHANGE;
-						msg.arg1 = intent.getIntExtra("progress", -1);
+						msg.arg1 = Integer.valueOf(intent.getStringExtra("progress"));
 						mHandler.sendMessage(msg);
 						break;															
 					case Configer.PlayerMsg.PLAYING_MSG:

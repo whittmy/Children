@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Children.iml" filepath="$PROJECT_DIR$/Children.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Lib_DevsmartAndroidHList/Lib_DevsmartAndroidHList.iml" filepath="$PROJECT_DIR$/../Lib_DevsmartAndroidHList/Lib_DevsmartAndroidHList.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Lib_LoadingRunningMan/Lib_LoadingRunningMan.iml" filepath="$PROJECT_DIR$/../Lib_LoadingRunningMan/Lib_LoadingRunningMan.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Lib_Logger/Lib_Logger.iml" filepath="$PROJECT_DIR$/../Lib_Logger/Lib_Logger.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Lib_asynhttpclient/Lib_asynhttpclient.iml" filepath="$PROJECT_DIR$/../Lib_asynhttpclient/Lib_asynhttpclient.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Lib_volly/Lib_volly.iml" filepath="$PROJECT_DIR$/../Lib_volly/Lib_volly.iml" />
+    </modules>
+  </component>
+</project>

@@ -74,7 +74,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
-import lib.runningman.RunningMan;
+//import lib.runningman.RunningMan;
 import logger.lemoon.Logger;
 
 import org.apache.http.Header;
@@ -141,7 +141,7 @@ public class PlayingActivity extends Activity implements VideoGestureDetectListe
 
 	private boolean bExit = false;
 	private final int CMD_SRC_PREPARED = 10001;
-	private RunningMan mRunner;
+//	private RunningMan mRunner;
 
 	private Handler uiHandler = new Handler() {
 		public void handleMessage(Message paramAnonymousMessage) {
@@ -152,7 +152,7 @@ public class PlayingActivity extends Activity implements VideoGestureDetectListe
 					uiHandler.removeMessages(CMD_UPDATE_CURRPOSITION);
 					uiHandler.sendEmptyMessage(CMD_UPDATE_CURRPOSITION);
 
-					mRunner.hide();
+//					mRunner.hide();
 				}
 				return;
 			case CMD_UPDATE_CURRPOSITION:// sswitch_1
@@ -675,8 +675,8 @@ public class PlayingActivity extends Activity implements VideoGestureDetectListe
 				POWER_LOCK);
 		sensorManager = (SensorManager) getSystemService("sensor");
 
-		mRunner = new RunningMan(this);
-		mRunner.show("   ");
+//		mRunner = new RunningMan(this);
+//		mRunner.show("   ");
 
 		Intent it = getIntent();
 		String str = it.getStringExtra("video_name");
@@ -740,7 +740,7 @@ public class PlayingActivity extends Activity implements VideoGestureDetectListe
 		}
 		uiHandler.removeMessages(CMD_UPDATE_CURRPOSITION);
 		bExit = true;
-		mRunner.close();
+//		mRunner.close();
 		System.exit(0);
 	}
 

@@ -2,14 +2,93 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#ff0000" >
-
+       <HorizontalScrollView 
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="5dp">
+            <LinearLayout 
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:orientation="horizontal">
+	            <Button
+		            android:id="@+id/btn_1"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="生活常识"
+		            android:textSize="22sp" /> 
+	            <Button
+		            android:id="@+id/btn_2"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="国学教育"
+		            android:textSize="22sp" />             
+	            <Button
+		            android:id="@+id/btn_3"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="数理思维"
+		            android:textSize="22sp" />   
+	            <Button
+		            android:id="@+id/btn_4"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="涂鸦"
+		            android:textSize="22sp" />	            
+	            <Button
+		            android:id="@+id/btn_5"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="自然科学"
+		            android:textSize="22sp" />	                
+	            <Button
+		            android:id="@+id/btn_6"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="语言发展"
+		            android:textSize="22sp" />	
+	            <Button
+		            android:id="@+id/btn_10"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="动画城城"
+		            android:textSize="22sp" />  	             
+	            <Button
+		            android:id="@+id/btn_7"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="音乐"
+		            android:textSize="22sp" />	 	            
+	            <Button
+		            android:id="@+id/btn_8"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="本地内容"
+		            android:textSize="22sp" />	            
+	            
+	            <Button
+		            android:id="@+id/btn_9"
+		            android:layout_width="wrap_content"
+		            android:layout_height="wrap_content"
+		            android:text="设置"
+		            android:textSize="22sp" />                 
+                  
+                                   
+                
+        	</LinearLayout>            
+         </HorizontalScrollView>    
+         
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_marginLeft="10dip"
+        android:layout_marginTop="50dp"
+        android:layout_alignParentTop="true"
         android:gravity="center"
         android:orientation="vertical" >
+      
+        
         <Button
             android:id="@+id/btn_home"
             android:layout_width="wrap_content"

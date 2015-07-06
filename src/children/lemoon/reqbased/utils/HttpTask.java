@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import children.lemoon.Configer;
 import children.lemoon.reqbased.entry.BasePaserMessageUtil;
 
 import com.google.gson.Gson;
@@ -26,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
 
-import lib.runningman.RunningMan;
+//import lib.runningman.RunningMan;
 import logger.lemoon.Logger;
 
 public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
@@ -45,7 +46,7 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 	private String url = "";
 	private HttpURLConnection urlConnDownLoad;
 
-	private RunningMan mRunMan;
+//	private RunningMan mRunMan;
 	private static int[] request_method = null;
 	private boolean bshowLoading;
 
@@ -75,8 +76,8 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 		this.isZip = bzip;
 
 		bshowLoading = showLoading;
-		if (context != null)
-			mRunMan = new RunningMan(context);
+//		if (context != null)
+//			mRunMan = new RunningMan(context);
 	}
 
 	/*
@@ -196,10 +197,10 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 		super.onPostExecute(paramMessage);
 		this.paseUtil.parse(this.responseClass, this.url, this.requestType, this.responseResult, this.mHandler, this.context, this.cache, this.bodyRequest,
 				true);
-		if (mRunMan != null) {
-			mRunMan.hide();
-			mRunMan.close();
-		}
+//		if (mRunMan != null) {
+//			mRunMan.hide();
+//			mRunMan.close();
+//		}
 	}
 
 	protected void onPreExecute() {
@@ -210,9 +211,9 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 		// localHashMap.put("body", localGson.toJson(this.bodyRequest));
 		this.jsonObjectHeader = localGson.toJson(wrapHeader());
 		this.jsonObjectBody = localGson.toJson(this.bodyRequest);
-
-		if (bshowLoading && mRunMan != null)
-			mRunMan.show(null);
+//
+//		if (bshowLoading && mRunMan != null)
+//			mRunMan.show(null);
 	}
 
 	public Map<String, String> wrapHeader() {
@@ -229,7 +230,7 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 		// timeStamp));
 
 		localHashMap.put("sign", "22");
-		localHashMap.put("client", "1");
+		localHashMap.put("client", String.valueOf(Configer.OEM_ID));
 
 		// ver3
 		// localHashMap.put("retStatus", "");

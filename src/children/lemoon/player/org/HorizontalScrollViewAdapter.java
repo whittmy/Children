@@ -10,12 +10,14 @@ import com.nostra13.universalimageloader.cache.memory.impl.LruMemoryCache;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.DisplayImageOptions.Builder;
 import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
 import com.nostra13.universalimageloader.core.decode.BaseImageDecoder;
 import com.nostra13.universalimageloader.core.download.BaseImageDownloader;
 import com.nostra13.universalimageloader.utils.StorageUtils;
 
 
+import children.lemoon.Configer;
 import children.lemoon.R;
 import children.lemoon.myrespone.PlayItemEntity;
 
@@ -60,6 +62,14 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
 		        .diskCacheFileCount(10000)			//10000 pics    
 		        .writeDebugLogs()				// Log.d()
+		        .defaultDisplayImageOptions(new Builder()
+		        								.cacheOnDisc(true)
+		        								.cacheOnDisk(true)
+		        								//.cacheInMemory(true)
+		        								.showImageForEmptyUri(Configer.Res.get_icon_for_player())
+		        								.showImageOnLoading(Configer.Res.get_icon_for_player())
+		        								.showImageOnFail(Configer.Res.get_icon_for_player())
+		        								.build())		        
 		        .build();
 		mLoader.init(config);
 	}
@@ -102,7 +112,7 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		
 		mLoader.displayImage(pie.getPic(), viewHolder.mImg);
 		
-		viewHolder.mImg.setImageResource(R.drawable.mv_bg_default);
+		//viewHolder.mImg.setImageResource(R.drawable.mv_bg_default);
 		
 		if(mAct.mHListView.getClickPos() == position){
 			viewHolder.mImgPlaying.setVisibility(View.VISIBLE);

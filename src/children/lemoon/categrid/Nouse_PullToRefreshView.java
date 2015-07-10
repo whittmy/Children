@@ -22,7 +22,7 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class PullToRefreshView
+public class Nouse_PullToRefreshView
   extends LinearLayout
 {
   final String TAG = "PullToRefreshView";
@@ -55,13 +55,13 @@ public class PullToRefreshView
   private RotateAnimation mReverseFlipAnimation;
   private ScrollView mScrollView;
   
-  public PullToRefreshView(Context paramContext)
+  public Nouse_PullToRefreshView(Context paramContext)
   {
     super(paramContext);
     init();
   }
   
-  public PullToRefreshView(Context paramContext, AttributeSet paramAttributeSet)
+  public Nouse_PullToRefreshView(Context paramContext, AttributeSet paramAttributeSet)
   {
     super(paramContext, paramAttributeSet);
     init();
@@ -465,12 +465,12 @@ public class PullToRefreshView
   
   public static abstract interface OnFooterRefreshListener
   {
-    public abstract void onFooterRefresh(PullToRefreshView paramPullToRefreshView);
+    public abstract void onFooterRefresh(Nouse_PullToRefreshView paramPullToRefreshView);
   }
   
   public static abstract interface OnHeaderRefreshListener
   {
-    public abstract void onHeaderRefresh(PullToRefreshView paramPullToRefreshView);
+    public abstract void onHeaderRefresh(Nouse_PullToRefreshView paramPullToRefreshView);
   }
 }
 

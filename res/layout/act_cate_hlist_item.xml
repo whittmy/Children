@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 整体的背景应该与大背景一致，元素间隔部分的正好和大背景一致 -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content" 
+    android:background="#ff0000"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp">
+
+    <!-- 代码中getMeasuredHeight计算view宽度结果，与这个FrameLayout的width的设置关系很大，如果为match_parent则大，如果为112，则为114，这个是我要的结果-->
+    <FrameLayout
+        android:id="@+id/imgcontainer"
+       	android:layout_width="147dp"
+       	android:layout_height="90dp"
+	   	android:layout_centerInParent="true"
+		android:paddingLeft="10dp"
+		android:paddingTop="10dp"         
+       	android:focusable="true"
+       	android:background="#2399aa" >
+	   <ImageView
+	        android:id="@+id/iv_icon"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+	        android:scaleType="centerCrop" 
+	        android:focusable="false"/>  
+	   <ProgressBar 
+	        android:id="@+id/dlprogress"
+	        style="?android:attr/progressBarStyleHorizontal"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:max="100"
+	        android:progress="0"
+	        android:layout_gravity="bottom|center_horizontal"
+	        android:visibility="invisible"
+	         />      
+    </FrameLayout>
+
+
+    <!--对新的hlistview而已，此 textview的宽度是重点哦，如果设置为fillparent，则会影响最顶层view大小，如果wrap_content，则文字会完全显示，导致最终影响最顶层view -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="180dp"
+        android:layout_height="wrap_content"
+
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="5dp"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:singleLine="true"
+        android:textColor="#aaffffff"
+        android:background="#ff0000"  />
+
+</RelativeLayout>

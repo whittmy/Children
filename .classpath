@@ -5,13 +5,5 @@
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
-	<classpathentry exported="true" kind="lib" path="libs/android-support-v4.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/Baidu_CyberPlayer_SDK_1.7s_org.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/gson-2.2.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/ormlite-android-4.48.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/ormlite-core-4.48.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/ormlite-jdbc-4.48.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/universal-image-loader-1.9.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="libs/apache-ant-zip.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

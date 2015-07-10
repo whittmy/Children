@@ -22,14 +22,14 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"/>
     
     <application
         android:name="children.lemoon.MyApp"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/ThemeActivity" >
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
         <!--  
         <activity android:name="children.lemoon.ui.MainUi"
             android:screenOrientation="landscape" >

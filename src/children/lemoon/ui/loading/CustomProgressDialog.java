@@ -102,10 +102,6 @@ public class CustomProgressDialog extends Dialog {
 		Drawable[] imgs;
 		if(files == null || files.length<2){
 			//内置
-//			imgs = new Drawable[3];
-//			imgs[0] = context.getResources().getDrawable(R.drawable.ic_launcher);
-//			imgs[1] = context.getResources().getDrawable(R.drawable.ic_launcher);
-//			imgs[2] = context.getResources().getDrawable(R.drawable.ic_launcher);
 			imgs = Configer.Res.getLoading(context);
 		}
 		else{
@@ -122,10 +118,6 @@ public class CustomProgressDialog extends Dialog {
 			 
 			if(imgs[0] == null){
 				//内置
-//				imgs = new Drawable[3];
-//				imgs[0] = context.getResources().getDrawable(R.drawable.ic_launcher);
-//				imgs[1] = context.getResources().getDrawable(R.drawable.ic_launcher);
-//				imgs[2] = context.getResources().getDrawable(R.drawable.ic_launcher);
 				imgs = Configer.Res.getLoading(context);
 			}
 			else{

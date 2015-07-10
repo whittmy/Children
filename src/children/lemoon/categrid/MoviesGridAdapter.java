@@ -5,12 +5,14 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 
@@ -38,7 +40,7 @@ public class MoviesGridAdapter extends BaseAdapter {
 	private LinkedList<PlayItemEntity> data;
  
 	ImageLoader mLoader;
-	
+	private int[] mBGs = new int[]{R.drawable.grid_item_bg1, R.drawable.grid_item_bg2, R.drawable.grid_item_bg3};
 	public MoviesGridAdapter(Activity paramActivity, LinkedList<PlayItemEntity> paramLinkedList, ImageLoader loader) {
 		this.context = paramActivity;
 		this.data = paramLinkedList;
@@ -62,31 +64,27 @@ public class MoviesGridAdapter extends BaseAdapter {
 	public View getView(int paramInt, View v, ViewGroup paramViewGroup) {
  		Holder hold;
 		if (v == null) {
-			Logger.LOGD("position---" + paramInt + "----convertView.getWidth()=null");
 			v = View.inflate(this.context, R.layout.act_cate_grid_item, null);
 			hold = new Holder();
 			hold.icon = ((ImageView) v.findViewById(R.id.iv_icon));
-//			hold.icon.setAdjustViewBounds(true);
-//			hold.icon.setMaxHeight((int) (1.39726F * i));
 			hold.title = ((TextView) v.findViewById(R.id.tv_title));
+			hold.bg = (ImageView)v.findViewById(R.id.hlist_item_bg);
+			hold.bg.setLayoutParams(new RelativeLayout.LayoutParams(247, 157));
 			v.setTag(hold);
 		}
 		hold = (Holder) v.getTag();
 		PlayItemEntity pie = (PlayItemEntity) this.data.get(paramInt);
 		hold.title.setText(pie.getName());
-		
-		//hold.icon.setImageBitmap(this.defaultIcon);
-		
 		mLoader.displayImage(pie.getPic(), hold.icon);
-		//mLoader.
-		//hold.icon.setImageResource(R.drawable.mv_bg_default);
- 
+		
+		Log.e("", "pos:"+paramInt+", mod="+paramInt%3);
+		hold.bg.setBackgroundResource(mBGs[paramInt%3]);
 
 		return v;
 	}
 
 	class Holder {
-		public ImageView icon;
+		public ImageView icon, bg;
 		public TextView title;
 
 	}

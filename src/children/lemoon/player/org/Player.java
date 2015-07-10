@@ -12,6 +12,7 @@ import com.dd.database.DatabaseManager;
 import com.dd.database.QueryExecutor;
 import com.dd.my.MvCacheMgrDAO;
 import com.devsmart.android.ui.HorizontalListView;
+import com.devsmart.android.ui.HorizontalListView.OnScrollListener;
 
 import children.lemoon.Configer;
 import children.lemoon.R;
@@ -22,6 +23,7 @@ import children.lemoon.myrespone.ResponePList;
 import children.lemoon.reqbased.BaseReqActivity;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.utils.HttpManger;
+import children.lemoon.ui.loading.CustomProgressDialog;
  
 
 import logger.lemoon.Logger;
@@ -53,7 +55,6 @@ import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
 import android.view.View.OnTouchListener;
 
-import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AbsListView;
@@ -102,7 +103,9 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	private HorizontalScrollViewAdapter mAdapter;
 	private int mCurPg = 0;
 	
+	CustomProgressDialog mLoading;
 	private boolean mBCtrlbarShow = false;
+	
 	SeekBar sBar;
 	public Handler mHandler = new Handler(/*getMainLooper()*/) {
 		@Override
@@ -242,6 +245,10 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		this.getWindowManager().getDefaultDisplay().getMetrics(mDm);
 		setContentView(R.layout.mv_player);
 		
+		mLoading = CustomProgressDialog.createDialog(this);
+		if(!mLoading.isShowing())
+			mLoading.show();
+		
 		
 		DatabaseManager.initializeInstance(this);
 		mPref = getSharedPreferences("sv", 0);
@@ -285,12 +292,12 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
  
 		mHListView.setOnScrollListener(new OnScrollListener() {
 			@Override
-			public void onScrollStateChanged(AbsListView view, int scrollState) {
+			public void onScrollStateChanged(View view, int scrollState) {
 				// TODO Auto-generated method stub
 			}
 			
 			@Override
-			public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+			public void onScroll(View view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 				// TODO Auto-generated method stub
 				Log.e("", "onScroll: "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
 
@@ -891,6 +898,8 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			mTvDur.setText(MediaUtil.formatTime(mDuration));
 			mBtnPlay.setBackgroundResource(R.drawable.mv_btn_pause);
 			mPlayer.start();
+			
+			mLoading.cancel();
 		}
 	};
 	//----------------------------------------------------------

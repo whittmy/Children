@@ -43,7 +43,7 @@ public class Configer {
 	
 	
 	public static final int REQ_TYPE_CATEINFO = 100;
-	
+	public static final int REQ_TYPE_HLIST = 101;	
 	
 	public static final int TYPE_QUICK_ENTRY_TEST = 1001;
 	public static final int TYPE_QUICK_ENTRY_TESTA = 1002;
@@ -62,6 +62,9 @@ public class Configer {
 			rt = "http://www.nybgjd.com/misc/livesrc/childcatedata.json";
 			break;
 
+		case REQ_TYPE_HLIST:
+			rt = "http://www.nybgjd.com/erge/api2/getHResList/";
+			break;
 		case REQ_TYPE_CATEINFO:
 			rt = "http://www.nybgjd.com/erge/api2/getresList/";
 			break;

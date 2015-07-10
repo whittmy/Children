@@ -29,6 +29,7 @@ import com.nostra13.universalimageloader.utils.StorageUtils;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.IBinder;
 import android.util.Log;
@@ -37,10 +38,19 @@ import android.view.View;
  
 public class LoadDataSrv extends Service {
     private static final int BUFF_SIZE = 1024 * 1024; // 1M Byte	
-
+    SharedPreferences mPref;
+    
     public interface IF_UpdateProgress{
     	public void onProgressUpdate(final int cur, final int total);
     }	
+    
+    @Override
+    public void onCreate() {
+    	// TODO Auto-generated method stub
+    	super.onCreate();
+    	
+    	mPref = getSharedPreferences("loading", 0);
+    }
     
     
 	@Override
@@ -70,31 +80,20 @@ public class LoadDataSrv extends Service {
 				f.mkdirs();
 			}
 			 
+			//2小时,如果下载失败则20分钟取一次
+			if(System.currentTimeMillis() - mPref.getLong("lasttm", 0) < 7200000){ //7200*1000
+				return super.onStartCommand(intent, flags, startId);
+			}
+			
 			AsyncHttpClient client = new AsyncHttpClient();
-			client.get("http://192.168.10.107/xxx.zip", new FileAsyncHttpResponseHandler(file) {
+			//zip中的内容
+			//正常名字形式如： _xxxx_01.png, _xxxx_02.png
+			// 或  xxxx_01.png, xxxx_02.png
+			client.get("http://www.nybgjd.com/erge/api2/cfgLoading", new FileAsyncHttpResponseHandler(file) {
 				@Override
 				public void onSuccess(int statusCode, Header[] headers, File file) {
 					// TODO Auto-generated method stub
 					Log.e("", "$$$$$$$$$$$$$$$$$$$$$$ finishied");
-					
-//					try {
-//						upZipFile(file, getCacheDir()+"/loadings/", new IF_UpdateProgress(){
-//							@Override
-//							public void onProgressUpdate(int cur, int total) {
-//								// TODO Auto-generated method stub
-//								
-//							}});
-//						
-//						 long currentTime = System.currentTimeMillis();
-//						 file.setLastModified(currentTime);
-//					} catch (ZipException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					} catch (IOException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-					 
 					try {
 						unzip(file.getAbsolutePath(), getCacheDir()+"/loadings/");
 						 long currentTime = System.currentTimeMillis();
@@ -103,12 +102,14 @@ public class LoadDataSrv extends Service {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-
+					
+					mPref.edit().putLong("lasttm", System.currentTimeMillis()).commit();
 				}
 				
 				@Override
 				public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
 					// TODO Auto-generated method stub
+					mPref.edit().putLong("lasttm", System.currentTimeMillis()+7198800).commit();	//20分钟 1200秒
 				}
 			});
 		}

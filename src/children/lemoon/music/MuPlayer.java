@@ -1,14 +1,17 @@
 package children.lemoon.music;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import android.animation.ObjectAnimator;
+import com.nineoldandroids.animation.ObjectAnimator;
+import com.nineoldandroids.animation.ValueAnimator;
+import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
+ 
 import android.animation.TimeInterpolator;
-import android.animation.ValueAnimator;
-import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -26,6 +29,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
@@ -42,20 +46,26 @@ import android.widget.TextView;
 import android.widget.Toast;
 import children.lemoon.Configer;
 import children.lemoon.R;
+import children.lemoon.music.PlayerService.MyBind;
 import children.lemoon.music.lrc.LrcView;
 import children.lemoon.music.util.MediaUtil;
 import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.ResponePList;
+import children.lemoon.player.org.Player;
 import children.lemoon.reqbased.BaseReqActivity;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.utils.HttpManger;
 import children.lemoon.reqbased.utils.OnClickUtil;
+import children.lemoon.ui.loading.CustomProgressDialog;
+import children.lemoon.ui.view.BatteryImgView;
+import children.lemoon.ui.view.BatteryRcvBindView;
+import children.lemoon.utils.Logger;
 
 public class MuPlayer extends Activity {
 	ListView mVSongList;
 	SongListAdapter mAdapter;
 
-	private int[] mBgImg = { R.drawable.mu_bg, R.drawable.mu_bg2, R.drawable.mu_bg3 };
+	private int[] mBgImg = { R.drawable.mu_bg, R.drawable.mu_bg3 };/*, R.drawable.mu_bg2*/
 
 	public static LrcView mlrcView; // 自定义歌词视图, 由service更新
 	ImageView mImgDisc;
@@ -67,9 +77,9 @@ public class MuPlayer extends Activity {
 	CtrlBtnClickListener mCtrlListener = new CtrlBtnClickListener();
 
 	private PlayerReceiver playerReceiver;
-	public static final String MUSIC_PLAYING = "com.wwj.action.MUSIC_PLAYING"; // 音乐正在播放动作
-	public static final String REPEAT_ACTION = "com.wwj.action.REPEAT_ACTION"; // 音乐重复播放动作
-	public static final String SHUFFLE_ACTION = "com.wwj.action.SHUFFLE_ACTION";// 音乐随机播放动作
+	public static final String MUSIC_PLAYING = "lemoon.action.MUSIC_PLAYING"; // 音乐正在播放动作
+	public static final String REPEAT_ACTION = "lemoon.action.REPEAT_ACTION"; // 音乐重复播放动作
+	public static final String SHUFFLE_ACTION = "lemoon.action.SHUFFLE_ACTION";// 音乐随机播放动作
 
 	private SeekBar mSeekBar; // 歌曲进度
 	private TextView mTvCurTm; // 当前进度消耗的时间
@@ -77,26 +87,35 @@ public class MuPlayer extends Activity {
 
 	SeekBarChangeListener mSeekBarListener = new SeekBarChangeListener();
 
-	private void registerReceiver() {
-		// 定义和注册广播接收器
-		playerReceiver = new PlayerReceiver();
-		IntentFilter filter = new IntentFilter();
-		filter.addAction(Configer.Action.ACT_UPDATE_ACTION);
-		filter.addAction(Configer.Action.ACT_MUSIC_CURRENT);
-		filter.addAction(Configer.Action.ACT_MUSIC_DURATION);
-		filter.addAction(Configer.Action.ACT_UPDATE_PlAYLIST);
-		filter.addAction(Configer.Action.ACT_CUR_FINISHED);
-
-		registerReceiver(playerReceiver, filter);
-	}
+	CustomProgressDialog mLoading;
 
 	void initView() {
+		
+		mBatteryView = (BatteryImgView)findViewById(R.id.battery);
 		RelativeLayout mubg = (RelativeLayout) findViewById(R.id.mubg);
-		mubg.setBackgroundResource(mBgImg[new Random().nextInt(mBgImg.length)]);
-
+		
+		SimpleDateFormat formatter = new SimpleDateFormat("HH");       
+		Date curDate    =   new Date(System.currentTimeMillis());//获取当前时间       
+		String str = formatter.format(curDate);     
+		if(str.compareTo("18") >= 0 || str.compareTo("06")<0){
+			//night
+			mubg.setBackgroundResource(R.drawable.mu_bg2);
+		}
+		else{
+			mubg.setBackgroundResource(mBgImg[new Random().nextInt(mBgImg.length)]);
+		}
+ 
 		mTvmuName = (TextView) findViewById(R.id.mu_title);
 		mTvCate = (TextView) findViewById(R.id.mu_cata);
 
+		findViewById(R.id.go_back).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				finish();
+			}
+		});
+		
 		mPrev = (Button) findViewById(R.id.btn_prev);
 		mPlay = (Button) findViewById(R.id.btn_ok);
 		mNext = (Button) findViewById(R.id.btn_next);
@@ -105,6 +124,9 @@ public class MuPlayer extends Activity {
 		mPlay.setOnClickListener(mCtrlListener);
 		mNext.setOnClickListener(mCtrlListener);
 		mFav.setOnClickListener(mCtrlListener);
+		mFav.setVisibility(View.INVISIBLE); // 先隐藏
+		
+		
 		mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
 
 		mlrcView = (LrcView) findViewById(R.id.lrcShowView);
@@ -116,13 +138,13 @@ public class MuPlayer extends Activity {
 		// 唱片动画
 		mImgDisc = (ImageView) findViewById(R.id.mu_disc);
 
-		animator = ObjectAnimator.ofFloat(mImgDisc, "rotation", 0, 360);
+		animator = ObjectAnimator.ofFloat(mImgDisc,  "rotation", 0, 360 );
 		animator.setRepeatCount(ValueAnimator.INFINITE);
 		animator.setDuration(15000);
 		animator.setRepeatMode(ObjectAnimator.RESTART);
 		// 为了增加
 		animator.addUpdateListener(updateListener);
-
+		
 		// 播放列表
 		mVSongList = (ListView) findViewById(R.id.mu_songlist);
 		mVSongList.setOnItemClickListener(new OnItemClickListener() {
@@ -131,7 +153,7 @@ public class MuPlayer extends Activity {
 				// TODO Auto-generated method stub
 				Log.e("", "onItemClick");
 
-				if (mIService != null && mIService.getDatas() != null && arg2 < mIService.getDatas().size()) {
+				if (mIService != null  && arg2 < mIService.getDatas().size()) {
 					mTvmuName.setText(mIService.getDatas().get(arg2).getName());
 					play(arg2);
 				}
@@ -165,8 +187,8 @@ public class MuPlayer extends Activity {
 				if (mIService != null && mIService.getCurRunMode() == Configer.RunMode.MODE_LOCAL)
 					return;
 
-				// 判断是否滚到最后一行, 最后三行
-				if (firstVisibleItem + visibleItemCount + 3 >= totalItemCount && totalItemCount > 0) {
+				// 判断是否滚到最后一行, 最后5行, 总数至少要大于一页(13)
+				if (firstVisibleItem + visibleItemCount + 5 >= totalItemCount && totalItemCount >= 13) {
 					Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_GET_NEWPG, null);
 				}
 			}
@@ -175,35 +197,7 @@ public class MuPlayer extends Activity {
 
 	int mVisibleLastidx = 0;
 
-	private IMUService mIService = null;
-	ServiceConnection mConnection = new ServiceConnection() {
-		public void onServiceDisconnected(ComponentName name) {
-			// Log.d(TAG,"DisConnection");
-			// System.out.println("DisConnection!!!");
-			mIService = null;
-		}
 
-		public void onServiceConnected(ComponentName name, IBinder service) {
-			// TODO Auto-generated method stub
-			// Log.d(TAG,"Connection");
-			mIService = (IMUService) service;
-
-			mAdapter = new SongListAdapter(MuPlayer.this, mIService.getDatas());
-			mVSongList.setAdapter(mAdapter);
-
-			if (mIService.isPlaying()) {
-				animCtrl(AnimAct.ANIM_PLAY);
-				mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
-			} else {
-				mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
-			}
-			mTvmuName.setText(mIService.getCurTitle());
-			mTvCurTm.setText(MediaUtil.formatTime(mIService.getCurTm()));
-			mTvDur.setText(MediaUtil.formatTime(mIService.getDuration()));
-			mSeekBar.setMax(mIService.getDuration());
-			mSeekBar.setProgress(mIService.getCurTm());
-		}
-	};
 
 	public int getCurPos() {
 		if (mIService == null)
@@ -211,98 +205,343 @@ public class MuPlayer extends Activity {
 		return mIService.getCurPos();
 	}
 
-	private void bindMySvr() {
-		Intent intent = new Intent(MuPlayer.this, PlayerService.class);
-		bindService(intent, mConnection, BIND_AUTO_CREATE);
-	}
 
-	private void unbindMySvr() {
-		unbindService(mConnection);
-	}
+
+	private BatteryRcvBindView batteryReceiver;
+	
+	
+	BatteryImgView mBatteryView;
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.mu_player);
-		
-		findViewById(R.id.go_back).setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				finish();
-			}
-		});
-		
+
 		initView();
 
+		//startMyService();
+
+		//bindMySvr();
 	}
 
-	// String mCurCataName;
-	@Override
-	protected void onResume() {
-		// TODO Auto-generated method stub
-		super.onResume();
+	
+	
+	//>>>>>>>>>>>>>>>>>>>>>>>>>> Service >>>>>>>>>>>>>>>
+	private IMUService mIService = null;
+
+	//bind的目的是与service通信，获取service中的数据, 
+	//先绑定，通信之后才知道service中到底有没有数据。
+	
+	private void bindMySvr() {
+		if(mIService == null && mConnection == null){
+			mConnection= new ServiceConnection() {
+				public void onServiceDisconnected(ComponentName name) {
+					 Log.d("","===============DisConnection");
+					 System.out.println("DisConnection!!!");
+					mIService = null;
+					mConnection = null;
+				}
+	 
+				public void onServiceConnected(ComponentName name, IBinder service) {
+					// TODO Auto-generated method stub
+					Log.d("","=============Connection");
+					mIService = (IMUService) ((MyBind)service);
+					if(mIService == null){
+						return;
+					}	
+					
+					startMyService();
+				}
+			};
+			
+			Intent it = buildSrvIntent();
+ 			bindService(it, mConnection, BIND_AUTO_CREATE);
+		}
+	}
+
+	private void unbindMySvr() {
+		Log.d("", "unbindMySvr?????????????");
+		if (mIService != null){
+			unbindService(mConnection);
+		}
+	}
+
+	ServiceConnection mConnection;
+
+	
+	
+	Intent buildSrvIntent(){
 		Intent it = getIntent();
+		boolean longPress = it.getBooleanExtra("longpress", false);
 		String cataName = it.getStringExtra("curCata");
 		String localpath = it.getStringExtra("localpath");
-		cataName = cataName == null ? "" : cataName;
-		localpath = localpath == null ? "" : localpath;
+		int type = it.getIntExtra("type", 0);
+		//cataName = cataName == null ? "" : cataName;
+		//localpath = localpath == null ? "" : localpath;
 
 		// 根据参数 localpath 来判断模式
 		int runmode = Configer.RunMode.MODE_NETWORK;
-		if (localpath.length() > 0) {
+		if (localpath/*.length() > 0*/ != null) {
 			runmode = Configer.RunMode.MODE_LOCAL;
 		}
-
+ 
 		// 获取分类id，这个决定数据，直接传入服务
-		int cataid = it.getIntExtra("cataId", -1);
-		if (cataid == -1) {
-			Toast.makeText(this, "invalid cata", Toast.LENGTH_SHORT).show();
-			finish();
-			return;
-		}
-
-		// 设置分类名
-		if (mTvCate.getText() != cataName) {
-			if (!cataName.isEmpty()) {
-				mTvCate.setText(cataName);
-			}
-		}
+		String cataid = it.getStringExtra("cataId") ;
+//		if (runmode==Configer.RunMode.MODE_NETWORK && cataid == null) {
+//			Toast.makeText(this, "invalid cata", Toast.LENGTH_SHORT).show();
+//			finish();
+//			return null;
+//		}			
+ 
+//		// 设置分类名
+//		if (mTvCate.getText() != cataName) {
+//			if (!cataName.isEmpty()) {
+//				mTvCate.setText(cataName);
+//			}
+//		}
 
 		// 启动服务器
 		it = new Intent(MuPlayer.this, PlayerService.class);
 		it.putExtra("runmode", runmode);
 		it.putExtra("cataId", cataid);
+		it.putExtra("cataName", cataName);
+		it.putExtra("type", type);
+		it.putExtra("longpress", longPress);
 		if (runmode == Configer.RunMode.MODE_LOCAL)
 			it.putExtra("localpath", localpath);
-		startService(it);
-		bindMySvr();
+		return it;
+ 
+	}
+	
+	//startService的目的是传参到service，并让其执行相应的指令。
+	void startMyService(){
+		Log.d("", "===startMyService====");
+
+		Intent it = buildSrvIntent();
+		if(it!=null){
+			startService(it);
+		}
+	}
+	//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	
+	 
+	//>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Receiver 控制   >>>>>>>>>>>>>>>>>>>>>>
+	private void registerMyReceiver() {
+		//电量receiver
+		if(batteryReceiver == null){
+			batteryReceiver = new BatteryRcvBindView(mBatteryView);
+			registerReceiver(batteryReceiver, new IntentFilter("android.intent.action.BATTERY_CHANGED")); 
+		}
+
+		// 定义和注册广播接收器
+		if(playerReceiver == null){
+			Log.d("","=========playerReceiver");
+			playerReceiver = new PlayerReceiver();
+			IntentFilter filter = new IntentFilter();
+			filter.addAction(Configer.Action.ACT_UPDATE_ACTION);
+			filter.addAction(Configer.Action.ACT_MUSIC_CURRENT);
+			filter.addAction(Configer.Action.ACT_MUSIC_DURATION);
+			filter.addAction(Configer.Action.ACT_UPDATE_PlAYLIST);
+			filter.addAction(Configer.Action.ACT_CUR_FINISHED);
+			filter.addAction(Configer.Action.ACT_STATUS_RESET);
+			filter.addAction(Configer.Action.ACT_NEW_CATE_DATA);
+			
+			filter.addAction(Configer.Action.ACT_SHOW_LOADING);
+			filter.addAction(Configer.Action.ACT_HIDE_LOADING);
+			
+			
+			//锁屏
+		    filter.addAction(Intent.ACTION_SCREEN_ON);  
+		    filter.addAction(Intent.ACTION_SCREEN_OFF);  
+			
+			registerReceiver(playerReceiver, filter);	
+		}
+	}
+	
+	void unregisterMyRcver(){
+		if(batteryReceiver != null){
+			unregisterReceiver(batteryReceiver);
+			batteryReceiver = null;
+		}
+		if (playerReceiver != null){
+			unregisterReceiver(playerReceiver);
+			playerReceiver = null;
+		}
 	}
 
-	// /////////////////// Receiver 控制 ///////////////////////
 	@Override
-	protected void onStart() {
+	protected void onResume() {
 		// TODO Auto-generated method stub
-		super.onStart();
-		registerReceiver();
+		super.onResume();
+		Log.e("", "============== onresume=============");
+		
+		if(mLoading == null)
+			mLoading = CustomProgressDialog.createDialog(this);
+		
+		
+		bindMySvr();
+		
+		
+		registerMyReceiver();
 	}
 
 	@Override
 	protected void onStop() {
 		// TODO Auto-generated method stub
 		super.onStop();
-		if (playerReceiver != null)
-			unregisterReceiver(playerReceiver);
-		if (mConnection != null)
-			unbindService(mConnection);
+		Log.e("", "==============onstop========");
+		updateListener.destory();
+		animator.cancel();
+		
+		if(mLoading != null){
+			mLoading.dismiss();
+			mLoading = null;
+		}
+		
+		
+		unregisterMyRcver();
+		
+		unbindMySvr();
 	}
+	
+	
+	
+	private void updateProgess(){
+		int currentTime = mIService.getCurTm();
+		mTvCurTm.setText(MediaUtil.formatTime(currentTime));
+		mSeekBar.setProgress(currentTime);
+	}
+	
+	private void updatePlayStatus(){
+		if(mAdapter == null)
+			return; 
+		
+		// 播放操作部分的界面更新部分放在这儿
+		if (mIService.getCurPos() >= 0) {
+			mTvmuName.setText(mIService.getCurTitle());
+		}
+		mTvDur.setText(MediaUtil.formatTime(mIService.getDuration()));
+
+		int dur = mIService.getDuration() <= 0 ? 300 : mIService.getDuration();
+		mSeekBar.setMax(dur);
+		mTvDur.setText(MediaUtil.formatTime(dur));
+
+		mVSongList.setSelection(mIService.getCurPos());
+		mAdapter.notifyDataSetChanged(); // 为了让选中项文字颜色改变
+
+		if (mIService.getCurPos() >= mVisibleLastidx) {
+			mVSongList.setSelection(mIService.getCurPos()); // 为了使选中项条目滚动到可见区域,
+															// 但是总是会出现在当期可视区域的第一个，就意味着点击一下，选择中的调到第一个了。
+			mVSongList.requestFocus();
+		}
+		
+		
+		if (mIService.isPlaying()) {
+			mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
+			animCtrl(AnimAct.ANIM_PLAY);
+			
+		} else {
+			mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
+			animCtrl(AnimAct.ANIM_PAUSE);
+		}
+	}
+	
+	
+	/**
+	 * 用来接收从service传回来的广播的内部类
+	 * 
+	 * @author wwj
+	 * 
+	 */
+	public class PlayerReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if(mIService == null){
+				return;
+			}
+ 
+ 			if (action.equals(Configer.Action.ACT_MUSIC_CURRENT)) {
+ 				updateProgess();
+			} 
+			else if (action.equals(Configer.Action.ACT_MUSIC_DURATION)
+					|| action.equals(Configer.Action.ACT_UPDATE_ACTION)) {
+				updatePlayStatus();
+			}
+			else if (action.equals(Configer.Action.ACT_UPDATE_PlAYLIST)) {
+				if(mIService.getDatas().size()==0)
+					return;
+				initPlayInfo();
+				
+				Log.d("", "========Configer.Action.ACT_UPDATE_PlAYLIST");
+				mAdapter.notifyDataSetChanged();
+			}
+			else if(Intent.ACTION_SCREEN_ON.equals(action)){  
+                //mScreenStateListener.onScreenOn();  
+				Log.e("", "-------------Screen--------on");
+            }else if(Intent.ACTION_SCREEN_OFF.equals(action)){  
+                //mScreenStateListener.onScreenOff();
+            	Log.e("", "-------------Screen--------off");
+            }  
+            else if(action.equals(Configer.Action.ACT_STATUS_RESET)
+            		||action.equals(Configer.Action.ACT_CUR_FINISHED)){
+            	animCtrl(AnimAct.ANIM_STOP);
+            	mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
+            	mTvDur.setText("00:00");
+            	mTvCurTm.setText("00:00");
+            	mSeekBar.setProgress(0);
+            	
+            }
+            else if(action.equals(Configer.Action.ACT_NEW_CATE_DATA)){
+				if(mIService.getDatas().size()==0)
+					return;
+				
+				initPlayInfo();
+				return;
+            }
+            else if(action.equals(Configer.Action.ACT_SHOW_LOADING)){
+            	if(mLoading != null)
+            		mLoading.show();
+            }
+            else if(action.equals(Configer.Action.ACT_HIDE_LOADING)){
+            	if(mLoading != null)
+            		mLoading.hide();
+            }
+		}
+	}	
+	
+	
+	private void initPlayInfo(){
+		//设置初始界面信息
+		mAdapter = new SongListAdapter(MuPlayer.this, mIService.getDatas());
+		mVSongList.setAdapter(mAdapter);
+
+		if (mIService.isPlaying()) {
+			animCtrl(AnimAct.ANIM_PLAY);
+			mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
+		} else {
+			mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
+		}
+		mTvmuName.setText(mIService.getCurTitle());
+		mTvCurTm.setText(MediaUtil.formatTime(mIService.getCurTm()));
+		mTvDur.setText(MediaUtil.formatTime(mIService.getDuration()));
+		mSeekBar.setMax(mIService.getDuration());
+		mSeekBar.setProgress(mIService.getCurTm());
+		mTvCate.setText(mIService.getCurCateName());
+	}
+	//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+ 
+	
 
 	public enum AnimAct {
 		ANIM_PLAY, ANIM_PAUSE, ANIM_REPLAY, ANIM_STOP
 	};
 	// flag:
 	private void animCtrl(AnimAct flag) {
+ 
 		switch (flag) {
 		case ANIM_PLAY:// 开始
 			// 如果已经暂停，是继续播放
@@ -311,20 +550,25 @@ public class MuPlayer extends Activity {
 			else
 				// 否则就是从头开始播放
 				animator.start();
+			Log.e("", "#### animCtrl: play ###");
 			break;
 		case ANIM_PAUSE:// 暂停
 			updateListener.pause();
+			Log.e("", "#### animCtrl: pause ###");
 			break;
 		case ANIM_REPLAY:
 			updateListener.play();
 			animator.end();
 			animator.start();
 			updateListener.pause();
+			Log.e("", "#### animCtrl: replay ###");
 			break;
 		case ANIM_STOP:
 			animator.end();
+			Log.e("", "#### animCtrl: stop ###");
 			break;
 		}
+ 
 	}
 
 	// ///////////////////////////////////////////////////////////
@@ -340,11 +584,11 @@ public class MuPlayer extends Activity {
 				String[] param = null;
 				if (mIService.isPlaying()) {
 					mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
-					animCtrl(AnimAct.ANIM_PAUSE);
+					//animCtrl(AnimAct.ANIM_PAUSE);
 					param = new String[]{"MSG", String.format("%d", Configer.PlayerMsg.PAUSE_MSG)};
 				} else {
 					mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
-					animCtrl(AnimAct.ANIM_PLAY);
+					//animCtrl(AnimAct.ANIM_PLAY);
 					param = new String[]{"MSG", String.format("%d", Configer.PlayerMsg.CONTINUE_MSG)};
 				}
 				Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, param);
@@ -425,62 +669,7 @@ public class MuPlayer extends Activity {
 		Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, args);
 	}
 
-	/**
-	 * 用来接收从service传回来的广播的内部类
-	 * 
-	 * @author wwj
-	 * 
-	 */
-	public class PlayerReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			String action = intent.getAction();
-			if (action.equals(Configer.Action.ACT_MUSIC_CURRENT)) {
-				int currentTime = mIService.getCurTm();
-				mTvCurTm.setText(MediaUtil.formatTime(currentTime));
-				mSeekBar.setProgress(currentTime);
-			} 
-			else if (action.equals(Configer.Action.ACT_MUSIC_DURATION)) {
-				// 更新总时间，可以认为是首次播放
-				mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
 
-				int dur = mIService.getDuration() <= 0 ? 300 : mIService.getDuration();
-				mSeekBar.setMax(dur);
-				mTvDur.setText(MediaUtil.formatTime(dur));
-
-				mVSongList.setSelection(mIService.getCurPos());
-				mAdapter.notifyDataSetChanged(); // 为了让选中项文字颜色改变
-
-				if (mIService.getCurPos() >= mVisibleLastidx) {
-					mVSongList.setSelection(mIService.getCurPos()); // 为了使选中项条目滚动到可见区域,
-																	// 但是总是会出现在当期可视区域的第一个，就意味着点击一下，选择中的调到第一个了。
-					mVSongList.requestFocus();
-				}
-				animCtrl(AnimAct.ANIM_PLAY);
-			}
-			else if (action.equals(Configer.Action.ACT_UPDATE_ACTION)) {
-				// 播放操作部分的界面更新部分放在这儿
-				if (mIService.getCurPos() >= 0) {
-					mTvmuName.setText(mIService.getCurTitle());
-				}
-				mTvDur.setText(MediaUtil.formatTime(mIService.getDuration()));
-
-				if (mIService.isPlaying()) {
-					mPlay.setBackgroundResource(R.drawable.mu_pausebtn_selector);
-					animCtrl(AnimAct.ANIM_PAUSE);
-				} else {
-					mPlay.setBackgroundResource(R.drawable.mu_playbtn_selector);
-					animCtrl(AnimAct.ANIM_PLAY);
-				}
-			} 
-			else if (action.equals(Configer.Action.ACT_UPDATE_PlAYLIST)) {
-				mAdapter.notifyDataSetChanged();
-			}
-			else if (action.equals(Configer.Action.ACT_CUR_FINISHED)) {
-				animCtrl(AnimAct.ANIM_REPLAY);
-			}
-		}
-	}
 
 	ObjectAnimator animator;
 	MyAnimatorUpdateListener updateListener = new MyAnimatorUpdateListener();
@@ -530,6 +719,12 @@ public class MuPlayer extends Activity {
 		}
 
 		CountDownTimer mCd;
+		public void destory(){
+			if(mCd != null){
+				mCd.cancel();
+				mCd = null;
+			}
+		}
 
 		@Override
 		public void onAnimationUpdate(ValueAnimator animation) {
@@ -541,12 +736,13 @@ public class MuPlayer extends Activity {
 				if (!isPaused) {
 					mCurrentPlayTime = animation.getCurrentPlayTime();
 					fraction = animation.getAnimatedFraction();
-					animation.setInterpolator(new TimeInterpolator() {
+					Interpolator it = new Interpolator() {
 						@Override
 						public float getInterpolation(float input) {
 							return fraction;
 						}
-					});
+					};
+					animation.setInterpolator(it);
 					isPaused = true;
 				}
 
@@ -568,8 +764,10 @@ public class MuPlayer extends Activity {
 
 					@Override
 					public void onFinish() {
-						mCd.cancel();
-						mCd = null;
+						if(mCd != null){
+							mCd.cancel();
+							mCd = null;
+						}
 						animator.setCurrentPlayTime(mCurrentPlayTime); // high-cpu
 					}
 				}.start();

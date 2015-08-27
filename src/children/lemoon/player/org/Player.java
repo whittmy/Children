@@ -2,12 +2,16 @@ package children.lemoon.player.org;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.security.MessageDigest;
+import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
-
+ 
 import com.dd.database.DatabaseManager;
 import com.dd.database.QueryExecutor;
 import com.dd.my.MvCacheMgrDAO;
@@ -22,11 +26,16 @@ import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.ResponePList;
 import children.lemoon.reqbased.BaseReqActivity;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
+import children.lemoon.reqbased.entry.ResponsePager;
 import children.lemoon.reqbased.utils.HttpManger;
+import children.lemoon.reqbased.utils.MyUtil;
 import children.lemoon.ui.loading.CustomProgressDialog;
+import children.lemoon.ui.view.BatteryImgView;
+import children.lemoon.ui.view.BatteryRcvBindView;
+import children.lemoon.utils.Logger;
  
 
-import logger.lemoon.Logger;
+
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -43,9 +52,12 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseArray;
+import android.util.SparseIntArray;
 
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -54,10 +66,12 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
 import android.view.View.OnTouchListener;
+import android.view.WindowManager;
 
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AbsListView;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -89,19 +103,28 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	private boolean isIdle = true;
 	
 	int mDuration;
-	LinearLayout mHeaderContainer;
-	RelativeLayout mCtrlContainer;
+	RelativeLayout mHeaderContainer;
+	RelativeLayout mCtrlContainer, mLayerTop;
 	TextView mMvTitle;
-	ImageView mBattery;
-	View mFill1, mFill2;
+	ImageView mImgPauseFlag;
+	//View mFill1, mFill2;
 	TextView mTvCurtm, mTvDur;
 	
 	int mRunMode = Configer.RunMode.MODE_NETWORK; 
 	
 	private LinkedList<PlayItemEntity> mData = new LinkedList<PlayItemEntity>();
-	public HorizontalListView mHListView;
+	public HorizontalListView mHListView, mSetsHList;
 	private HorizontalScrollViewAdapter mAdapter;
-	private int mCurPg = 0;
+
+	public final int PAGE_SIZE = 50;
+	private int mCurPg = 0;   //用于去网络数据
+	
+	private int mCurSetsGrpIdx = 0;// 用于切换集组
+	private int mTotalPage = 0; //总页数
+	private SparseIntArray mHadDataGetArr = new SparseIntArray(); //获得数据的页面会被记录下来，用于判断是否再通过网络获取数据。
+	
+	
+	private SetsHListAdapter mSetsAdapter;
 	
 	CustomProgressDialog mLoading;
 	private boolean mBCtrlbarShow = false;
@@ -135,131 +158,134 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 
 	private Button mBtnPlay;
 	String mCurLocalPath = "";
-	int mCurCateId;
+	String mCurCateId;
+	int mReqType = 4;
 
 	SharedPreferences mPref;
 	final String SP_CUR_PAGE = "page"; 
 	final String SP_CUR_CLICKID = "clickid"; 	
-	
+ 
 	
 	private void saveState(final List<PlayItemEntity> data){
-		//当前 已请求的页， 
-		//当前正在播放的clickid
-		//已请求的数据
-		DatabaseManager.getInstance().executeQueryTask(new QueryExecutor() {
-		    @Override
-		    public void run(SQLiteDatabase database) {
-		    	MvCacheMgrDAO udao = new MvCacheMgrDAO(database, Player.this); // your class
-		    	List<PlayItemEntity> tmp = null;
-		    	
-		    	if(data == null || data.size()==0){
-		    		tmp  = mData;
-		    	}
-		    	else{
-		    		tmp = data;
-		    	}
-		    	
-		    	for(PlayItemEntity pie : tmp){
-		    		udao.insert(pie.getId(), pie.getName(), pie.getFileSize(), pie.getPlayCnt(), pie.getPic(), pie.getDownUrl(),mCurCateId);
-		    	} 		    	
-		    }
-		});
-		
-		
-		mPref.edit().putInt(SP_CUR_PAGE+"_"+mCurCateId, mCurPg).commit();
-		mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, mHListView.getClickPos()).commit();
+ 
 	}
 	
 	private void recoverState(){
-		if(mRunMode == Configer.RunMode.MODE_LOCAL){
-			queryPlayList(mCurPg+1);
-			return;
-		}
-		
-		//读取数据库， 当然是在子线程中执行的
-//		DatabaseManager.getInstance().executeQueryTask(new QueryExecutor() {
-//		    @Override
-//		    public void run(SQLiteDatabase database) {
-//		    	MvCacheMgrDAO udao = new MvCacheMgrDAO(database, Player.this); // your class
-//		    	Cursor cursor = udao.selectAll(mCurCateId);
-// 		    	if(cursor == null){
-//		    		Logger.LOGD("", "have no data to ...");
-//		    		return;
-//		    	}
-// 		    	mData.clear();
-//				for(cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()) {
-//					PlayItemEntity pie = new PlayItemEntity();
-//					pie.setId(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_MID)));
-//					pie.setName(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_NAME)));
-//					pie.setFileSize(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_FSIZE)));
-//					pie.setPlayCnt(cursor.getInt(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_CNT)));
-//					pie.setPic(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_PIC)));
-//					pie.setDownUrl(cursor.getString(cursor.getColumnIndex(MvCacheMgrDAO.COLUMNS_URL)));
-//					
-//					//rocking-------debug
-//					mData.add(pie);
-// 		    	} 
-//				
-//				//加载
-//				runOnUiThread(new Runnable() {
-//					@Override
-//					public void run() {
-//						// TODO Auto-generated method stub
-//						int curpg = mPref.getInt(SP_CUR_PAGE+"_"+mCurCateId, -1);
-//						int clickid = mPref.getInt(SP_CUR_CLICKID+"_"+mCurCateId, -1);
-//						
-//						if(curpg==-1 || clickid==-1){
-//							mCurPg = 0;
-//							clickid = 0;
-//						}
-//						else{
-//							mCurPg = curpg;
-//						}
-//						
-////						mHListView.setClickPos(clickid);
-////						mHListView.initDatas(mAdapter);
-////						initHScrollView(clickid);
-//						mHListView.setClickPos(clickid);
-//						
-//						if(mData.size() == 0){
-//							queryPlayList(mCurPg+1);
-//						}
-//						else{
-//							mBfirstData = false;
-//							myPlay(clickid);
-//						}						
-//					}
-//				});
-//		    }
-//		});
-		
+//		if(mRunMode == Configer.RunMode.MODE_LOCAL){
+//			queryPlayList(mCurPg+1);
+//			return;
+//		}
+
 		queryPlayList(mCurPg+1);
 	}
 	
+	private void pauseBgMusic(){
+	    long eventtime = SystemClock.uptimeMillis(); 
+	    Intent downIntent = new Intent(Intent.ACTION_MEDIA_BUTTON, null); 
+	    KeyEvent downEvent = new KeyEvent(eventtime, eventtime, 
+	    KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE, 0); 
+	    downIntent.putExtra(Intent.EXTRA_KEY_EVENT, downEvent); 
+	    sendOrderedBroadcast(downIntent, null); 
+
+	    Intent upIntent = new Intent(Intent.ACTION_MEDIA_BUTTON, null); 
+	    KeyEvent upEvent = new KeyEvent(eventtime, eventtime, 
+	    KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE, 0); 
+	    upIntent.putExtra(Intent.EXTRA_KEY_EVENT, upEvent); 
+	    sendOrderedBroadcast(upIntent, null); 
+	}
+	
+	public int getCurSetGrpIdx(){
+		return mCurSetsGrpIdx;
+	}
+	
+	public void setCurSetGrpIdx(int idx){
+		mCurSetsGrpIdx = idx;
+//			arg1.requestFocus();
+		mSetsHList.setSelection(idx);
+//		mSetsAdapter.notifyDataSetChanged();
+		
+		//访问数据
+		int pgidx = idx+1;
+		if(pgidx == mCurPg)
+			return;
+		
+		if(mHadDataGetArr.indexOfKey(pgidx) >= 0){
+			mHListView.setSelection(idx*PAGE_SIZE);
+		}
+		else{
+			queryPlayList(pgidx);
+		}
+	}
+
+	
+	//禁止锁屏方法二   
+//    @Override  
+//    protected void onResume() {  
+//        super.onResume();  
+//        pManager = ((PowerManager) getSystemService(POWER_SERVICE));  
+//        mWakeLock = pManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK  
+//                | PowerManager.ON_AFTER_RELEASE, TAG);  
+//        mWakeLock.acquire();  
+//    }  
+//      
+//    @Override  
+//    protected void onPause() {  
+//        super.onPause();  
+//          
+//        if(null != mWakeLock){  
+//            mWakeLock.release();  
+//        }  
+//    }  
+	
+	
+	
+	private BatteryRcvBindView batteryReceiver;
 	
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 
+		//禁止锁屏
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); 
+		
 		mContext = this;
 		this.getWindowManager().getDefaultDisplay().getMetrics(mDm);
 		setContentView(R.layout.mv_player);
 		
+		pauseBgMusic();
+		
+		batteryReceiver = new BatteryRcvBindView((BatteryImgView)findViewById(R.id.battery));
+		
 		mLoading = CustomProgressDialog.createDialog(this);
+		//mLoading.setCancelable(false);
 		if(!mLoading.isShowing())
 			mLoading.show();
 		
 		
-		DatabaseManager.initializeInstance(this);
+//		DatabaseManager.initializeInstance(this);
 		mPref = getSharedPreferences("sv", 0);
 		
 		findViewById(R.id.go_back).setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				finish();
+				onExitProc();
 			}
 		});
+		
+		//集组显示
+		mSetsHList = (HorizontalListView) findViewById(R.id.id_sethlist);
+		mSetsAdapter = new SetsHListAdapter(this);
+		mSetsHList.setAdapter(mSetsAdapter);
+		
+		mSetsHList.setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+				// TODO Auto-generated method stub
+				setCurSetGrpIdx(arg2);				
+			}
+		});
+
 		
 		mHListView = (HorizontalListView) findViewById(R.id.id_horizontalScrollView);
 		mAdapter = new HorizontalScrollViewAdapter(this, mData);
@@ -271,24 +297,11 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 				// TODO Auto-generated method stub
 				Log.e("", "=================== onitemclick :"+ arg2);
 				mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, arg2).commit();
+				((HorizontalScrollViewAdapter)arg0.getAdapter()).notifyDataSetChanged();
 				myPlay(arg2);
 			}
 		});
-		mHListView.setOnTouchListener(new OnTouchListener() {
-			long mLasttm = 0;
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				// TODO Auto-generated method stub
-				int action = event.getAction();
-				if(action==MotionEvent.ACTION_DOWN || action==MotionEvent.ACTION_MOVE){
-					if(System.currentTimeMillis()-mLasttm > 1500){
-						mLasttm = System.currentTimeMillis();
-						ctrlShowMgr();
-					}
-				}
-				return false;
-			}
-		});
+ 
  
 		mHListView.setOnScrollListener(new OnScrollListener() {
 			@Override
@@ -296,16 +309,33 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 				// TODO Auto-generated method stub
 			}
 			
+			//这里两个工作：1. 数据预请求；2.集组焦点的切换。
 			@Override
 			public void onScroll(View view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 				// TODO Auto-generated method stub
 				Log.e("", "onScroll: "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
 
+				//对于请求的数据要先判断是否已经请求过了。
 				if(firstVisibleItem+visibleItemCount+12 >= totalItemCount //注意next函数，尽可能一致
-					&& 	mData.size()>=30){ //如果实际数据没有满页（30），说明数据量就不够，何谈下一页，所以要限定。	
+					&& 	mData.size()>visibleItemCount){ //数据至少要满屏	
+					//另外注意，这里的mCurPg，只有当请求成功，它的值才会变更。
 					queryPlayList(mCurPg+1);
+					return;
 				}
-				 
+				
+				
+				//1. totalItemCount >0
+				//2. firstVisibleItem: idx for the first item of data
+				//3. visibleItemCount 
+				if(totalItemCount > 0){
+					float end = firstVisibleItem+visibleItemCount;
+					int setgrpidx = (int) (Math.ceil(end/PAGE_SIZE)-1);
+					if(setgrpidx >= 0 && setgrpidx!=mSetsHList.getSelectPosition()){
+						Log.e("", "############ Alter setgroup :"+setgrpidx);
+						mCurSetsGrpIdx = setgrpidx;
+						mSetsHList.setSelection(setgrpidx);
+					}
+				}
 			}
 		});
 
@@ -319,13 +349,15 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		mPlayPath = getIntent().getStringExtra("video_path");
 
 		//--------- 识别 运行模式： 本地 or 网络 , 分类标识 ---------------
-		mCurCateId = getIntent().getIntExtra("cataId", -1);
+		mCurCateId = getIntent().getStringExtra("cataId");
+		mReqType = getIntent().getIntExtra("type", 4);
+		
 		
 		String localpath  = getIntent().getStringExtra("localpath");
 		if(localpath != null){
 			if(localpath.isEmpty() || !new File(localpath).exists()){
 				Toast.makeText(this, "路径非法："+ localpath, Toast.LENGTH_SHORT).show();
-				finish();
+				onExitProc();
 				return;
 			}
 			
@@ -334,18 +366,14 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		}
 		else{
 			//mCurCateId = getIntent().getIntExtra("cataId", -1);
-			if(mCurCateId == -1){
+			if(mCurCateId == null){
 				Toast.makeText(this, "非法类别："+ mCurCateId, Toast.LENGTH_SHORT).show();
-				finish();
+				onExitProc();
 				return;
 			}
 			mRunMode = Configer.RunMode.MODE_NETWORK;
 		}
 		//-----------------------------------------------
-		
-		//queryPlayList(mCurPg+1);
-		
-		
 		//加载数据,来源多种
 		recoverState();
 		
@@ -354,26 +382,25 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		ctrlShowMgr();
 	}
 
+	
+	@Override
+	protected void onStop() {
+		// TODO Auto-generated method stub
+		super.onStop();
+		Log.e("", "onstop");
+		unregisterReceiver(batteryReceiver);
+		onExitProc();
+	}
+	
+	
 	@Override
 	protected void onResume() {
 		// TODO Auto-generated method stub
 		super.onResume();
-		// getWindow().getDecorView().setSystemUiVisibility(8);
 		Logger.LOGD(TAG, "-=-=-=-onResume-=-=-=-=");
-
-//		if (mPlayer != null) {
-//			myPlay(mPlayPath);
-//		}
+		registerReceiver(batteryReceiver, new IntentFilter("android.intent.action.BATTERY_CHANGED")); 
 	}
-	
-	
-	
-	
-
-	
-
-	
-	
+ 
 	//------------        seekbar  control --------------
 	public class DelayThread extends Thread {
 		private boolean pasued = false;
@@ -442,14 +469,11 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			mSeekThrd.start();
 		}
 	}
-	//--------------------------------------------------
 	
-
-
-
-
-
+	//--------------------------------------------------
 	void initMyView() {
+		mImgPauseFlag = (ImageView)findViewById(R.id.img_pause);
+		
 		mBtnPlay = (Button)findViewById(R.id.btn_play);
 		mBtnPlay.setOnClickListener(new OnClickListener() {
 			@Override
@@ -469,14 +493,12 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 				ctrlShowMgr();
 			}
 		});
-		mHeaderContainer = (LinearLayout) findViewById(R.id.header_container);
+		mHeaderContainer = (RelativeLayout) findViewById(R.id.header_container);
 		mCtrlContainer = (RelativeLayout) findViewById(R.id.ctrlbar_container);
 		mMvTitle = (TextView) findViewById(R.id.mv_title);
-		mBattery = (ImageView) findViewById(R.id.battery);
-		mFill1 = (View)findViewById(R.id.fill1);
-		mFill2 = (View)findViewById(R.id.fill2);
-		mFill1.setOnClickListener(new FillClickEvent());
-		mFill2.setOnClickListener(new FillClickEvent());
+		mMvTitle.setText("                       ");
+
+		mLayerTop = (RelativeLayout)findViewById(R.id.layer_top);
 		
 		mTvCurtm = (TextView) findViewById(R.id.curtime); 
 		mTvDur = (TextView) findViewById(R.id.dur);
@@ -492,7 +514,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			public void onStartTrackingTouch(SeekBar seekBar) {
 				// TODO Auto-generated method stub
 				Log.e("", "seekbar.......onStartTrackingTouch");
-				ctrlShowMgr();
+				//ctrlShowMgr();
 			}
 
 			@Override
@@ -503,7 +525,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 				mPlayer.seekTo(mDuration * dest / sMax);
 				
 				Log.e("", "seekbar.......onStopTrackingTouch");
-				ctrlShowMgr();
+				//ctrlShowMgr();
 			}
 		});
 	}
@@ -511,14 +533,18 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	
 	private void prev(boolean bplay){
 		if(bplay){
-//			if(mHListView.getClickPos()  <=  0)
-//				return;
-//			mHListView.prev();
-//			myPlay(mHListView.getClickPos());
 			int pos = mHListView.getClickPos();
 			if(pos <= 0 || mAdapter==null)
 				return;
 			mHListView.setClickPos(pos-1);
+			
+			
+			int setgrppos = (int) (Math.ceil((pos*1f)/PAGE_SIZE)-1);
+			if(setgrppos >= 0){
+				mCurSetsGrpIdx = setgrppos;
+				mSetsHList.setSelection(mCurSetsGrpIdx);
+			}
+			
 			myPlay(pos-1);
 		}
 	}
@@ -532,18 +558,19 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		}
 		
 		if(bplay){
-//			if(mHListView.getClickPos()+1 >= mData.size())
-//				return;
-//			mHListView.next();
-//			myPlay(mHListView.getClickPos());
-			
 			int pos = mHListView.getClickPos() + 1; 
 			if(pos >= mData.size() || mAdapter==null)
 				return;
 			mHListView.setClickPos(pos);
-			
+ 
+			int setgrppos = (int) (Math.ceil((pos*1f)/PAGE_SIZE)-1);
+			if(setgrppos >= 0){
+				mCurSetsGrpIdx = setgrppos;
+				mSetsHList.setSelection(mCurSetsGrpIdx);
+			}
+ 
 			//仅当隐藏时，其才将当前播放的滚动到开头，避免用户在选择影片时，其突然跳到正在播放的条目
-			if(mFill1.getVisibility() == View.INVISIBLE)
+			if(/*mFill1*/mLayerTop.getVisibility() == View.INVISIBLE)
 				mHListView.setSelection(pos);
 			
  			myPlay(pos);
@@ -579,6 +606,8 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			mBtnPlay.setBackgroundResource(R.drawable.mv_btn_play);
 			mPlayer.pause();
 			mbPause = true;
+			
+			mImgPauseFlag.setVisibility(View.VISIBLE);
 		}
 	}
 	
@@ -602,53 +631,62 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			mBtnPlay.setBackgroundResource(R.drawable.mv_btn_pause);
 			mPlayer.start();
 			mbPause = false;
+			mImgPauseFlag.setVisibility(View.GONE);
 		}
 	}
-	
+
+
 	private boolean isPlaying(){
 		if(mPlayer!=null && mPlayer.isPlaying() && !mbPause)
 			return true;
 		return false;
 	}
+
 	
- 
-
+	//按键处理
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	public boolean dispatchKeyEvent(KeyEvent event) {
 		// TODO Auto-generated method stub
-		switch (keyCode) {
-		case KeyEvent.KEYCODE_BACK:
-			Logger.LOGD(TAG, "exit.....");
-			if (mPlayer != null) {
-				mPlayer.release();
-				mPlayer = null;
+		if(event.getAction() == KeyEvent.ACTION_DOWN){
+			switch(event.getKeyCode()){
+			case KeyEvent.KEYCODE_BACK:
+				Logger.LOGE("======return");
+				onExitProc();
+				return true;
+			case 87:	//next
+				Logger.LOGE("======next");
+				next(true);
+				return true;
+			case 88:	//prev
+				Logger.LOGE("======prev");
+				prev(true);
+				return true;
+			case 85: //play/pause
+				Logger.LOGE("======play/pause");
+				togglePlay();
+				return true;
 			}
-			finish();
-			return true;
-		 
-		////// 按键控制 //////////////
-
 		}
-		return super.onKeyDown(keyCode, event);
+ 
+		return super.dispatchKeyEvent(event);
 	}
 
-	@Override
-	protected void onStop() {
-		// TODO Auto-generated method stub
-		super.onStop();
-		Logger.LOGD(TAG, "onStop");
-
+	
+	
+	private void onExitProc(){
+		if (mPlayer != null) {
+			mPlayer.release();
+			mPlayer = null;
+		}
 
 		releasePlayer();
 		unregisterMyRcv();
+		finish();
+		System.exit(0);
 	}
 
-	
-	
-	
-	
-	
 	boolean mBfirstData = true;
+	boolean mBReqing = false;
 	private boolean queryPlayList(int pgIdx/* , int pgSize */) {
 		if(mRunMode == Configer.RunMode.MODE_LOCAL){
 			if(!mBfirstData)
@@ -665,7 +703,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 					String[] l = f.list();
 					if(l == null){
 						//Toast.makeText(this, mCurLocalPath+ " 目录下没有内容", Toast.LENGTH_SHORT).show();
-						finish();
+						onExitProc();
 						return ;
 					}
 					
@@ -698,13 +736,24 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			return true;
 		}
 		else{
+			if(mBReqing)
+				return true;
+			
+			//如果已经请求过了，则不再请求。
+			if(mHadDataGetArr.indexOfKey(pgIdx) >= 0)
+				return true;
+			
+			mBReqing = true;
+			if(!mLoading.isShowing())
+				mLoading.show();
+			
 			HashMap<String, Object> bodyRequest = new HashMap<String, Object>();
 			bodyRequest.put("id", mCurCateId);
 			bodyRequest.put("pageindex", pgIdx);
-			bodyRequest.put("pagesize", "30");
-
+			bodyRequest.put("pagesize", PAGE_SIZE);
+			bodyRequest.put("type", mReqType);
 			HttpManger http = new HttpManger(this, bHandler, this);
-			return http.httpRequest(Configer.TYPE_QUICK_ENTRY_TEST, bodyRequest, false, ResponePList.class, false, false, true);
+			return http.httpRequest(Configer.REQ_VIDEO_PLAYLIST, bodyRequest, false, ResponePList.class, false, false, true);
 		}
 	}
 
@@ -717,53 +766,127 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		}
  
 		ResHeadAndBody rslt = (ResHeadAndBody) data;
+
 		// gson 将请求的数据，转为了ResponePList数据类型
 		ResponePList plist = (ResponePList) rslt.getBody();
 		List<PlayItemEntity> pList = plist.getpList();
+		//如果数据空，则页面相关信息不会被变更
 		if (pList == null || pList.isEmpty())
 			return;
+ 
+		ResponsePager pg = (ResponsePager)rslt.getPage();
+		if(pg != null){
+			if(mTotalPage == 0){
+				mTotalPage = pg.getPageCount();
+				
+				//更新 集数分组
+				mSetsAdapter.setSetCnt(pg.getCount());//总集数
+				mSetsAdapter.notifyDataSetChanged();
+				mSetsHList.setVisibility(View.VISIBLE);
+			}
+			
+			mCurPg = pg.getPageIndex();
+			if(mHadDataGetArr.indexOfKey(mCurPg)<0){
+				mHadDataGetArr.put(mCurPg, 1);	//入库，即存在
 
-		mData.addAll(plist.getpList());
-		//mHListView.initDatas(mAdapter);
-		//initHScrollView(-1);
-		mHListView.setClickPos(0);
-		mCurPg++;
+				ArrayList<Integer> keys = new ArrayList<Integer>();
+				for(int i=0; i < mHadDataGetArr.size(); i++){
+					keys.add(mHadDataGetArr.keyAt(i));
+				}
+				
+				//计算 insertIdx，根据带插入的列表的集码对应的位置，进行计算在mData中的插入位置
+				Collections.sort(keys);
+				int curIdx = keys.indexOf(mCurPg);
+				int insertIdx = PAGE_SIZE*curIdx; //[insertIdx, --) 
 
+				//数据入库
+				mData.addAll(insertIdx, plist.getpList());  //在mData中insertIdx之前插入 plist.getpList()
+				
+				if(!mBfirstData)
+					mHListView.setSelection(insertIdx);
+			}
+		}
+ 
 		if(	mBfirstData){
+			mHListView.setClickPos(0);
 			mBfirstData = false;
 			myPlay(mHListView.getClickPos());
 		}
+ 
 		/////////// 放在底部  每次请求要保存状态，保存状态  /////////////
 		saveState(plist.getpList());
-	}
+		
+		mLoading.cancel();
+		mBReqing = false;
 
-	@Override
-	public boolean onTouchEvent(MotionEvent event) {
-		// TODO Auto-generated method stub
-		switch (event.getAction()) {
-		case MotionEvent.ACTION_DOWN:
-			if(event.getY() >= mCtrlContainer.getY()){
-				if(!mBCtrlbarShow)
-					toggleClick();	
-				else
-					ctrlShowMgr();
-			}
-			else
-			{
-				Log.e("", "!!!!!!!!!!!!!!!!!!!!!down");
-				toggleClick();				
-			}
- 			return true;
-		}
-		return super.onTouchEvent(event);
 	}
-
  
-//	private void initHScrollView(int clickpos){
-//		if(clickpos >= 0)
-//			mHListView.setClickPos(clickpos);
-//		mHListView.initDatas(mAdapter);
-//	}
+	private boolean inRangeOfView(View view, MotionEvent ev) {
+		int[] location = new int[2];
+		view.getLocationOnScreen(location);
+		int x = location[0];
+		int y = location[1];
+		if (ev.getX() < x || ev.getX() > (x + view.getWidth()) || ev.getY() < y || ev.getY() > (y + view.getHeight())) {
+			return false;
+		}
+		return true;
+	}
+	
+	
+	void showCtrlbar(){
+		mBCtrlbarShow = false;
+		toggleClick();
+	}
+	
+	void hideCtrlbar(){
+		mBCtrlbarShow = true;
+		toggleClick();
+	}
+	
+	
+	long mLasttm = 0;
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent ev) {
+		// TODO Auto-generated method stub
+		int action = ev.getAction();
+
+		switch(action){
+		case MotionEvent.ACTION_DOWN:
+			if(!mBCtrlbarShow){
+				showCtrlbar();
+				return true;
+			}
+			
+			if(inRangeOfView(mHListView, ev) 
+					|| inRangeOfView(mHeaderContainer, ev)
+					|| inRangeOfView(mCtrlContainer, ev)
+					|| inRangeOfView(mSetsHList, ev)){
+ 
+				Log.e("", "down on mHListView");
+				if(System.currentTimeMillis()-mLasttm > 1500){
+					mLasttm = System.currentTimeMillis();
+					ctrlShowMgr();
+				}
+			}
+			else {
+				Log.e("", "down on Fill area");
+				hideCtrlbar();
+				return true;
+			}
+			break;
+			
+		case MotionEvent.ACTION_UP:
+			break;
+		case MotionEvent.ACTION_MOVE:
+			
+			break;
+		}
+		
+		return super.dispatchTouchEvent(ev);
+	}
+ 
+	
+	
 	
 	
 	// ------------------- player control ---------------------
@@ -773,15 +896,24 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		if(mData==null || curClickPos>=mData.size())
 			return;
 		
+		
+		String purl = null;
 		PlayItemEntity pie = mData.get(curClickPos);
-		if(pie.getDownUrl() == null || pie.getDownUrl().isEmpty()){
-			next(true);
-			return;
+		if(mRunMode == Configer.RunMode.MODE_LOCAL){
+			purl = pie.getDownUrl();
+//			if(purl != null)
+//				purl = URLEncoder.encode(purl);
+		}
+		else{
+			long ts = System.currentTimeMillis();
+			purl = Configer.initUrl(Configer.REQ_PLAYURL)+ pie.getIds()+"/"+URLEncoder.encode(pie.getSrc())+"/"+ts+"/"+ MyUtil.getSign(ts) ;
 		}
 
-		if (mPlayPath != null && mPlayPath.compareTo(pie.getDownUrl()) == 0)
+		if (purl == null ||  (mPlayPath != null && mPlayPath.compareTo(purl) == 0) )
 			return;
-		mPlayPath = pie.getDownUrl();
+		
+		
+		mPlayPath = purl;
 		myPlay(mPlayPath);
 	}
 	
@@ -790,12 +922,9 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			Toast.makeText(mContext, "无播放地址", Toast.LENGTH_SHORT).show();
 			return;
 		}
-		
-		
-//		mSurfaceView.setVisibility(View.INVISIBLE);
-//		mSurfaceView.setVisibility(View.VISIBLE);
-//		mSurfaceView.requestFocus();
-		
+ 
+		if(!mLoading.isShowing())
+			mLoading.show();
 		mPlayPath = url;
 		Logger.LOGD(TAG, "begin to play:" + mPlayPath);
 
@@ -807,13 +936,8 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			Logger.LOGD(TAG, "-=-=-=-=-=-= -=-=-reset-=--= -=-==-");
 			mPlayer.reset();
 			mPlayer.stop();
-			mPlayer.setDataSource(url);
-//			if(mRunMode == Configer.RunMode.MODE_LOCAL){
-//				mPlayer.prepare();
-//			}
-//			else if(mRunMode == Configer.RunMode.MODE_NETWORK){
-				mPlayer.prepareAsync();
-//			}
+			mPlayer.setDataSource(url); 
+			mPlayer.prepareAsync();
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 			Logger.LOGD(TAG, e.toString());
@@ -907,15 +1031,15 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	
 
 	//---------------- 控件显示/隐藏 控制 ----------------
-	class FillClickEvent implements View.OnClickListener{
-		@Override
-		public void onClick(View v) {
-			// TODO Auto-generated method stub
-			Log.e("", "fillevent, to hide it");
-			mBCtrlbarShow = true;
-			toggleClick();
-		}
-	}
+//	class FillClickEvent implements View.OnClickListener{
+//		@Override
+//		public void onClick(View v) {
+//			// TODO Auto-generated method stub
+//			Log.e("", "fillevent, to hide it");
+//			mBCtrlbarShow = true;
+//			toggleClick();
+//		}
+//	}
 	//调用这个函数按理可以直接隐藏/显示控件的，在视频未播放时没有问题
 	//播放时只能调用显示，却无隐藏效果，在其它平台没有问题， 后来将seekbar的刷新事件屏蔽或将 刷新变慢，就可以了。
 	// 感觉是，只要seekbar上还有将要刷新的dongzuo
@@ -937,30 +1061,18 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 					} catch (InterruptedException e) {
 						//e.printStackTrace();
 					}
-					mHeaderContainer.setVisibility(View.INVISIBLE);
-					mCtrlContainer.setVisibility(View.INVISIBLE);
-					mHListView.setVisibility(View.INVISIBLE);	
-					mFill2.setVisibility(View.INVISIBLE);
-					mFill1.setVisibility(View.INVISIBLE);
-			 
-					//mSurfaceView.setVisibility(View.VISIBLE);
+ 
+					mLayerTop.setVisibility(View.INVISIBLE);
 					mSurfaceView.requestFocus();
-
 				} else {
 					Log.e("", "toggleClick begin to show");
 					mBCtrlbarShow = true;
 					mSeekThrd.setPause(false);
-					
-					mFill1.setVisibility(View.VISIBLE);
-					mFill2.setVisibility(View.VISIBLE);
- 				
-					
-					mHeaderContainer.setVisibility(View.VISIBLE);
-					mCtrlContainer.setVisibility(View.VISIBLE);
-					mHListView.setVisibility(View.VISIBLE);
-					//mAdapter.notifyDataSetChanged();
+ 
+					mLayerTop.setVisibility(View.VISIBLE);
 					//解决初始控件设为invisible，在视频播放后，通过setvisible无法使控件显示的问题。
-					mFill1.getParent().requestTransparentRegion(mSurfaceView);
+					//mFill1.getParent().requestTransparentRegion(mSurfaceView);
+					mLayerTop.requestTransparentRegion(mSurfaceView);
 					ctrlShowMgr();
 				}
 			}
@@ -1039,6 +1151,10 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			filter.addAction(Configer.Action.MV_CTL_PREV);
 			filter.addAction(Configer.Action.MV_CTL_PLAY_PAUSE);
 			
+			//锁(关)屏状态
+		     filter.addAction(Intent.ACTION_SCREEN_ON);  
+		     filter.addAction(Intent.ACTION_SCREEN_OFF);  
+			
 			registerReceiver(myReceiver, filter);
 		}
 	}
@@ -1067,6 +1183,12 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			else if(action.equals(Configer.Action.MV_CTL_PREV)){
 				prev(true);
 			}
+			else if(Intent.ACTION_SCREEN_ON.equals(action)){  
+                //mScreenStateListener.onScreenOn();  
+            }else if(Intent.ACTION_SCREEN_OFF.equals(action)){  
+                //mScreenStateListener.onScreenOff();
+            	onExitProc();
+            }  
 		}
 	}
 	//-----------------------------------------------------------------

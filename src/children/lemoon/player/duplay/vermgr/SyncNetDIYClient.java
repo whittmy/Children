@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import logger.lemoon.Logger;
+
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -30,6 +30,8 @@ import android.util.Log;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.protocol.HttpContext;
+
+import children.lemoon.utils.Logger;
 
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.PersistentCookieStore;

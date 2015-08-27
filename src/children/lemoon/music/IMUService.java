@@ -18,4 +18,6 @@ public interface IMUService {
 	public String getCurTitle();
 	
 	public int getCurRunMode();
+	
+	public String getCurCateName();
 }

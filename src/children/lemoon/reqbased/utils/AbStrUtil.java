@@ -9,7 +9,9 @@ import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import logger.lemoon.Logger;
+import children.lemoon.utils.Logger;
+
+
 
 public final class AbStrUtil {
 	public static int chineseLength(String paramString) {

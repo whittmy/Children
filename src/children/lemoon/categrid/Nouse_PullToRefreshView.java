@@ -2,8 +2,9 @@ package children.lemoon.categrid;
 //ok
  
 
-import logger.lemoon.Logger;
+
 import children.lemoon.R;
+import children.lemoon.utils.Logger;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;

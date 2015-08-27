@@ -3,7 +3,9 @@ package children.lemoon.reqbased.utils;
 //ok
 import java.security.MessageDigest;
 
-import logger.lemoon.Logger;
+import children.lemoon.utils.Logger;
+
+
 
 import android.util.Log;
 

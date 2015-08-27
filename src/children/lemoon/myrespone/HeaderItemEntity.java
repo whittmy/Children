@@ -11,7 +11,7 @@ public class HeaderItemEntity extends BaseEntity {
 	private static final long serialVersionUID = 5191812891641741379L;
 	
 	private String title;
-	private int id;
+	private String id;
 	private List<PlayItemEntity> childs;
 	
 	
@@ -24,10 +24,10 @@ public class HeaderItemEntity extends BaseEntity {
 	}
 	
 	
-	public int getId(){
+	public String getIds(){
 		return id;
 	}
-	public void setId(int i){
+	public void setId(String i){
 		id = i;
 	}
 	

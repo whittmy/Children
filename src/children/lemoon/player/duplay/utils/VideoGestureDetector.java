@@ -1,6 +1,7 @@
 package children.lemoon.player.duplay.utils;
 
-import logger.lemoon.Logger;
+
+import children.lemoon.utils.Logger;
 import android.os.SystemClock;
 import android.view.MotionEvent;
 

@@ -28,8 +28,9 @@ import children.lemoon.reqbased.db.orm.annotation.Relations;
 import children.lemoon.reqbased.db.orm.annotation.RelationsType;
 import children.lemoon.reqbased.db.orm.annotation.Table;
 import children.lemoon.reqbased.utils.AbStrUtil;
+import children.lemoon.utils.Logger;
 
-import logger.lemoon.Logger;
+
 
 public class AbDBDaoImpl<T> extends AbBasicDBDao implements AbDBDao<T> {
 	private static final int METHOD_INSERT = 0;

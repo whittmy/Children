@@ -5,10 +5,12 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import children.lemoon.utils.Logger;
+
 import com.google.gson.Gson;
 import java.util.Map;
 
-import logger.lemoon.Logger;
+
 
 import org.json.JSONObject;
 

@@ -10,6 +10,12 @@ public class PreferencesUtils {
  
     public static String PREFERENCE_NAME = "TrineaAndroidCommon";
  
+    public static void delKey(Context context, String key){
+        SharedPreferences settings = context.getSharedPreferences(
+                PREFERENCE_NAME, Context.MODE_PRIVATE);
+        settings.edit().remove(key).commit();
+    }
+    
     /**
      * put string preferences
      * 

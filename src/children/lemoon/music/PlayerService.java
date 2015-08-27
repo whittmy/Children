@@ -1,19 +1,30 @@
 ﻿package children.lemoon.music;
 
+
 import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.http.client.ResponseHandler;
+
+ 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.os.Binder;
 import android.os.Handler;
@@ -32,7 +43,10 @@ import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.ResponePList;
 import children.lemoon.reqbased.BaseReqService;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
+import children.lemoon.reqbased.entry.ResponsePager;
+import children.lemoon.reqbased.utils.DeviceUtil;
 import children.lemoon.reqbased.utils.HttpManger;
+import children.lemoon.utils.Logger;
 
  
 /***
@@ -54,12 +68,15 @@ public class PlayerService extends BaseReqService {
 	private int mCurrent = 0; 		// 记录当前正在播放的音乐
 	private LinkedList<PlayItemEntity> mData = new LinkedList<PlayItemEntity>();
 	int mCurPg = 0;
-	int mpgSize = 15;
+	int mpgSize = 20;
+	int mTotalPage =9999;
 	
 	int mRunMode = Configer.RunMode.MODE_NETWORK; 
-	int mCataId = -1;
+	String mCataId = null; //用于网络
+	String mCataName = null; //用于本地判断类别是否改变，不可为空
+	int mReqType = 0;
 	
-	private int mPlayMode = Configer.PlayMode.MODE_LIST;			//播放状态，默认为顺序播放
+	private int mPlayMode = Configer.PlayMode.MODE_REPEATALL;     //Configer.PlayMode.MODE_LIST;			//播放状态，默认为顺序播放
 	private MyReceiver myReceiver;	//自定义广播接收器
 	private int currentTime;		//当前播放进度
 	private int duration;			//播放长度
@@ -70,20 +87,26 @@ public class PlayerService extends BaseReqService {
 	//实现activity访问service数据
     private MyBind myBind=new MyBind(); 
  
+    
+    
+	static private final int PREBUFFER_SIZE= 4*1024*1024;
+	static private final String CACHE_PATH = "/ProxyBuffer/files";
+	private String id=null;
+	
+
 	
 	/**
 	 * handler用来接收消息，来发送广播更新播放时间
 	 */
 	private Handler mHandler = new Handler() {
 		public void handleMessage(android.os.Message msg) {
+			//first clear
+			mHandler.removeMessages(msg.what);
+			
 			switch(msg.what){
 			case 1:
-				if(mediaPlayer != null) {
-					currentTime = mediaPlayer.getCurrentPosition(); // 获取当前音乐播放的位置
-//					Intent intent = new Intent();
-//					intent.setAction(Configer.Action.ACT_MUSIC_CURRENT);
-//					//intent.putExtra("currentTime", currentTime);
-//					sendBroadcast(intent); // 给PlayerActivity发送广播
+				if(mediaPlayer != null && mediaPlayer.isPlaying()) {
+					currentTime = (int)mediaPlayer.getCurrentPosition(); // 获取当前音乐播放的位置
 					Configer.sendNotice(PlayerService.this, Configer.Action.ACT_MUSIC_CURRENT, null);
 					mHandler.sendEmptyMessageDelayed(1, 1000);
 				}
@@ -117,14 +140,19 @@ public class PlayerService extends BaseReqService {
 				Log.e(TAG, "Service handleMsg: PROGRESS_CHANGE, mCurrent:"+mCurrent);
 				currentTime = msg.arg1;
 				play(currentTime);
-				break;			
+				break;	
+			case Configer.PlayerMsg.TOGGLEPAUSE_MSG:
+				if(isPlaying){
+					pause();
+				}
+				else{
+					resume();
+				}
+				break;
 			}
 		};
 	};
-
-	
-
-	
+ 
 	private void registerMyRcv(){
 		Log.e(TAG, "Service registerMyRcv");
 		myReceiver = new MyReceiver();
@@ -140,12 +168,17 @@ public class PlayerService extends BaseReqService {
 		unregisterReceiver(myReceiver);
 	}
 	
+ 
+	
+	AudioManager mAudioManager;
+	//RemoteControlClient mRemoteControlClient;
+	 private ComponentName mRemoteControlResponder;
  	public void onCreate() {
 		super.onCreate();
 		Log.e(TAG, "Service onCreate");
+		
 		mediaPlayer = new MediaPlayer();
-		//mp3Infos = MediaUtil.getMp3Infos(PlayerService.this);
-
+		 
 		/**
 		 * 设置音乐播放完成时的监听器
 		 */
@@ -154,18 +187,36 @@ public class PlayerService extends BaseReqService {
 			public void onCompletion(MediaPlayer mp) {
 				Log.e(TAG, "Service MediaPlayer onCompletion!");
 				Configer.sendNotice(PlayerService.this, Configer.Action.ACT_CUR_FINISHED, null);
-				
-				
-				
+
 				//先清除 当前播放时间的反复刷新机制。
 				mHandler.removeMessages(1);
 				
 				//doNext();  //这个不翻页，所以要改成下面的
-				next();
+				if(!mbUserStop){
+					next();
+				}
 			}
 		});
+		
+		mediaPlayer.setOnErrorListener(new OnErrorListener() {
+			@Override
+			public boolean onError(MediaPlayer mp, int what, int extra) {
+				// TODO Auto-generated method stub
+				
+				
+				mediaPlayer.reset();
+				
+				return false;
+			}
+		});
+		//=============================
+		mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		mRemoteControlResponder = new ComponentName(getPackageName(), RemoteControlReceiver.class.getName());
+		mAudioManager.registerMediaButtonEventReceiver(mRemoteControlResponder);
 
 		registerMyRcv();
+		
+		mAudioManager.registerMediaButtonEventReceiver(mRemoteControlResponder);
 	}
  	
 	// bindService会调用该函数
@@ -176,30 +227,66 @@ public class PlayerService extends BaseReqService {
 		return myBind;
 	}
 
+	
+	boolean bNetFirst = true;
 	// 每次startService走这步，(如果之前未运行，则先oncreate，否则直接该函数)
 	@Override
 	public void onStart(Intent intent, int startId) {
-		if(intent == null || mData==null)
+		if(intent == null)
 			return;
-		Log.e(TAG, "Service onStart, mData.size="+mData.size());
-		
-		String localpath = null;
 
+		
+		if(intent.getBooleanExtra("longpress", false)){
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_NEW_CATE_DATA, null);
+			return;
+		}
+ 
+		Log.e(TAG, "Service onStart, mData.size="+mData.size());
+
+		String localpath = null;
+		mReqType = intent.getIntExtra("type", 0);
 		int mode = intent.getIntExtra("runmode", -1);
-		int cataId = intent.getIntExtra("cataId", -1);
-		if(mode != -1 && cataId!=-1){
-			if(mode==Configer.RunMode.MODE_LOCAL){
+		String cataid = intent.getStringExtra("cataId");  //本想这用于本地的也用cataid，发现无法使用，
+		String cataName = intent.getStringExtra("cataName");
+
+		if(mode != -1){
+			if(mode==Configer.RunMode.MODE_LOCAL && cataName!=null){
 				localpath = intent.getStringExtra("localpath");
 			}
 			
+			if(mCataName!=null&& cataName!=null){
+				if(mRunMode == Configer.RunMode.MODE_LOCAL){
+					if(mCataName.equals(cataName) && mRunMode == mode){
+						Configer.sendNotice(PlayerService.this, Configer.Action.ACT_NEW_CATE_DATA, null);
+						return;
+					}
+				}
+				else{
+					if(mCataId!=null && cataid!=null){
+						if(mCataName.equals(cataName) && mCataId.equals(cataid) && mRunMode == mode){
+							Configer.sendNotice(PlayerService.this, Configer.Action.ACT_NEW_CATE_DATA, null);
+							return;
+						}
+					}
+				}
+
+			}
+
 			//如果模式不一致，则先清除数据
 			//若 分类不一样，则也清除数据
-			if(mRunMode != mode || cataId != mCataId){
+			if(mRunMode != mode || cataName != mCataName || cataid!=mCataId){
 				mData.clear();
+				mCurrent = 0;
 				mCurPg = 0;
+				bNetFirst = true;
+				
+				mHandler.sendEmptyMessage(Configer.PlayerMsg.STOP_MSG);
 			}
+ 
 			
-			mCataId = cataId;
+			
+			mCataName = cataName;
+			mCataId = cataid;
 			mRunMode = mode;
 		}
  
@@ -212,7 +299,7 @@ public class PlayerService extends BaseReqService {
 				return;
 			}
 			
-			String[] l = f.list();
+			String[] l = f.list(new FileNameSelector());
 			if(l == null){
 				Toast.makeText(this, localpath+ " 目录下没有内容", Toast.LENGTH_SHORT).show();
 				return;
@@ -229,9 +316,12 @@ public class PlayerService extends BaseReqService {
 				mData.add(pie);
 			}
 			
-			//return;
-			
-			
+			//播放
+			if(mData.size() >0){
+				mHandler.sendEmptyMessage(Configer.PlayerMsg.PLAY_MSG);
+				Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_PlAYLIST, null);
+			}
+ 
 		}
 		else if(mRunMode == Configer.RunMode.MODE_NETWORK){
 			//网络
@@ -239,15 +329,39 @@ public class PlayerService extends BaseReqService {
 				queryPlayList(mCurPg+1);
 				return;
 			}
-			
 		}
-		
-		
-		
 
 		super.onStart(intent, startId);
 	}
 	
+	
+	public class FileNameSelector implements FilenameFilter{
+		@Override
+		public boolean accept(File arg0, String arg1) {
+			// TODO Auto-generated method stub
+			arg1 = arg1.toLowerCase();
+			if(arg1.endsWith("mp3")
+				|| arg1.endsWith("wma")
+				|| arg1.endsWith("wav")
+				|| arg1.endsWith("mod")
+				|| arg1.endsWith("cd")
+				|| arg1.endsWith("md")
+				|| arg1.endsWith("asf")
+				|| arg1.endsWith("aac")
+				|| arg1.endsWith("mp3pro")
+				|| arg1.endsWith("vqf")
+				|| arg1.endsWith("flac")
+				|| arg1.endsWith("ape")
+				|| arg1.endsWith("mid")
+				|| arg1.endsWith("ogg")
+				|| arg1.endsWith("m4a")
+				|| arg1.endsWith("aac+")
+				|| arg1.endsWith("aiff")
+				|| arg1.endsWith("vqf"))
+				return true;
+			return false;
+		}
+	}
 	
 	
 	@Override
@@ -259,7 +373,7 @@ public class PlayerService extends BaseReqService {
 			mediaPlayer = null;
 		}
 		mHandler.removeCallbacks(mRunnable);
-		
+		mAudioManager.unregisterMediaButtonEventReceiver(mRemoteControlResponder);
 		unregisterMyRcv();
 	}
 
@@ -288,9 +402,10 @@ public class PlayerService extends BaseReqService {
 	Runnable mRunnable = new Runnable() {		
 		@Override
 		public void run() {
-			MuPlayer.mlrcView.setIndex(lrcIndex());
-			MuPlayer.mlrcView.invalidate();
-			mHandler.postDelayed(mRunnable, 10000);			// 歌词刷新频率，  原来100
+			// rocking 由于我们这版本不需要支持字幕，所以先屏蔽掉
+//			MuPlayer.mlrcView.setIndex(lrcIndex());
+//			MuPlayer.mlrcView.invalidate();
+//			mHandler.postDelayed(mRunnable, 10000);			// 歌词刷新频率，  原来100
 		}
 	};
 	
@@ -301,8 +416,8 @@ public class PlayerService extends BaseReqService {
 	public int lrcIndex() {
 		Log.e(TAG, "Service lrcIndex");
 		if(mediaPlayer.isPlaying()) {
-			currentTime = mediaPlayer.getCurrentPosition();
-			duration = mediaPlayer.getDuration();
+			currentTime = (int)mediaPlayer.getCurrentPosition();
+			duration = (int)mediaPlayer.getDuration();
 		}
 		if(currentTime < duration) {
 			for (int i = 0; i < lrcList.size(); i++) {
@@ -339,6 +454,7 @@ public class PlayerService extends BaseReqService {
 		int index = (int) (Math.random() * end);
 		return index;
 	}
+	 
 	
 	/**
 	 * 播放音乐
@@ -354,19 +470,24 @@ public class PlayerService extends BaseReqService {
 				return;
 			}
 			
-			
-			initLrc();
+			resetStatus();
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_SHOW_LOADING, null);
+
+			//initLrc();
 			mediaPlayer.reset();// 把各项参数恢复到初始状态
+			
+			//path = "http://quku.cn010w.com/qkca1116sp/upload_quku8/20078311111257.mp3";
 			mediaPlayer.setDataSource(path);
-			//mediaPlayer.prepare(); // 进行缓冲
+			
 			mediaPlayer.prepareAsync();
 			mediaPlayer.setOnPreparedListener(new PreparedListener());// 注册一个监听器
-			mHandler.sendEmptyMessage(1);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
+ 
+	
 	/**
 	 * 暂停音乐
 	 */
@@ -375,31 +496,40 @@ public class PlayerService extends BaseReqService {
 		if (mediaPlayer != null && mediaPlayer.isPlaying()) {
 			mediaPlayer.pause();
 			isPlaying = false;
+			mbUserStop = true;
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);
 		}
 	}
 	/**
 	 * 停止音乐
 	 */
+	private boolean mbUserStop = false;
 	private void stop() {
 		Log.e(TAG, "Service stop, mCurrent="+mCurrent);
 		if (mediaPlayer != null) {
 			mediaPlayer.stop();
-			try {
-				mediaPlayer.prepare(); // 在调用stop后如果需要再次通过start进行播放,需要之前调用prepare函数
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			//我屏蔽下面了，另外注意stop后，会执行 onComplet回调，会跳转到下一曲，所以要区分认为终止还是自然终止
+//			try {
+//				mediaPlayer.prepare(); // 在调用stop后如果需要再次通过start进行播放,需要之前调用prepare函数 
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
 			
 			isPlaying = false;
+			mbUserStop = true;
+			
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);
 		}
 	}
 
 	
 	private void resume() {
 		Log.e(TAG, "Service resume, mCurrent="+mCurrent);
-		if (!isPlaying) {
+		if (!isPlaying && mediaPlayer!=null) {
 			mediaPlayer.start();
 			isPlaying = true;
+			mHandler.sendEmptyMessage(1);
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);
 		}
 	}
 
@@ -420,7 +550,8 @@ public class PlayerService extends BaseReqService {
 //		//sendIntent.putExtra("mCurrent", mCurrent);
 //		// 发送广播，将被Activity组件中的BroadcastReceiver接收到
 //		sendBroadcast(sendIntent);
-		Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);
+		
+		//resetStatus();
 		play(0);
 	}
 
@@ -432,7 +563,7 @@ public class PlayerService extends BaseReqService {
 		//判断是否要取数据
 		int pg = mCurrent/mpgSize;
 		int idx = mCurrent%mpgSize;
-		if(pg==(mCurPg-1) && idx >10){
+		if(mRunMode==Configer.RunMode.MODE_NETWORK && pg==(mCurPg-1) && idx >10){
 			Log.e("", "begin to load page:"+(mCurPg+1)+", mCurrent="+mCurrent+", mcurpage="+mCurPg);
 			queryPlayList(mCurPg+1);
 		}
@@ -491,7 +622,7 @@ public class PlayerService extends BaseReqService {
 			mediaPlayer.seekTo(0);
 			mCurrent = 0;    
 
-			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);
+			resetStatus();
 		}
 		else if(rt == -2){
 			mediaPlayer.start();
@@ -502,7 +633,8 @@ public class PlayerService extends BaseReqService {
 //			//sendIntent.putExtra("mCurrent", mCurrent);
 //			// 发送广播，将被Activity组件中的BroadcastReceiver接收到
 //			sendBroadcast(sendIntent);
-			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);
+			
+			//resetStatus();
 			
 			//path = mp3Infos.get(mCurrent).getUrl();
 			path = mData.get(mCurrent).getDownUrl();
@@ -511,6 +643,15 @@ public class PlayerService extends BaseReqService {
 	}
 	
 
+	void resetStatus(){
+		isPlaying = false ; 	 
+
+		currentTime = 0;		//当前播放进度
+		duration = 0;			//播放长度
+
+		Configer.sendNotice(PlayerService.this, Configer.Action.ACT_STATUS_RESET, null);
+	}
+	
 	/**
 	 * 
 	 * 实现一个OnPrepareLister接口,当音乐准备好的时候开始播放
@@ -531,9 +672,11 @@ public class PlayerService extends BaseReqService {
 //			sendBroadcast(intent);
 			
 			isPlaying = true;
-			duration = mediaPlayer.getDuration();
+			mbUserStop = false;
+			duration = (int)mediaPlayer.getDuration();
 			Configer.sendNotice(PlayerService.this, Configer.Action.SVR_CTL_ACTION, new String[]{"MSG", String.format("%d", Configer.PlayerMsg.PLAYING_MSG)});	//触发更新播放中的进度更新的持续刷新机制。
 			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_MUSIC_DURATION, null);
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_HIDE_LOADING, null);
 		}
 	}
 
@@ -547,10 +690,13 @@ public class PlayerService extends BaseReqService {
 				//1. 处理播放控制消息  耗时操作已移植handler 
 				msg = Integer.valueOf(intent.getStringExtra("MSG")) ;			//播放信息
 				//           int cur = intent.getIntExtra("listPosition", -1);	//当前播放歌曲的在mp3Infos的位置
-				if(msg!=-1 && mCurrent!=-1){
+				if(msg!=-1 && mCurrent!=-1 && mCurrent<mData.size()){
 					//  mCurrent = cur;
 					path = mData.get(mCurrent).getDownUrl();
 					switch(msg){
+					case Configer.PlayerMsg.TOGGLEPAUSE_MSG:
+						mHandler.sendEmptyMessage(Configer.PlayerMsg.TOGGLEPAUSE_MSG);
+						break;
 					case Configer.PlayerMsg.PLAY_MSG: //直接播放音乐
 						Log.e(TAG, "Service MyReceiver msg:PLAY_MSG mCurrent="+mCurrent);
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.PLAY_MSG);
@@ -607,15 +753,15 @@ public class PlayerService extends BaseReqService {
 						mPlayMode = Configer.PlayMode.MODE_RANDOM;	//将播放状态置为4表示：随机播放
 						break;
 					}
-				}	
+				}
 				
 				return;
 			}
-			if(action.equals(Configer.Action.SVR_SHOW_LRC)){
+			else if(action.equals(Configer.Action.SVR_SHOW_LRC)){
 				// 3. 歌词
 				Log.e(TAG, "Service MyReceiver SVR_SHOW_LRC mCurrent="+mCurrent);
 				//mCurrent = intent.getIntExtra("listPosition", -1);
-				initLrc();
+				//initLrc();
 				return;
 			}
 			else if(action.equals(Configer.Action.SVR_GET_NEWPG)){
@@ -633,14 +779,17 @@ public class PlayerService extends BaseReqService {
 	
 	private boolean queryPlayList(int pgIdx/* , int pgSize */) {
 		if(mRunMode == Configer.RunMode.MODE_NETWORK){
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_SHOW_LOADING, null);
+			
 			Log.e(TAG, "Service queryPlayList pgIdx="+pgIdx);
 			HashMap<String, Object> bodyRequest = new HashMap<String, Object>();
-			//bodyRequest.put("classid", mCataId);
+			bodyRequest.put("id", mCataId);
 			bodyRequest.put("pageindex", pgIdx);
-			// bodyRequest.put("pagesize", pgSize);
+			bodyRequest.put("pagesize", mpgSize);
+			bodyRequest.put("type", mReqType);
 
 			HttpManger http = new HttpManger(this, bHandler, this);
-			return http.httpRequest(Configer.TYPE_QUICK_ENTRY_TESTA, bodyRequest, false, ResponePList.class, false, false, true);
+			return http.httpRequest(Configer.REQ_AUDIO_PLAYLIST, bodyRequest, false, ResponePList.class, false, false, true);
 		}
 		else{
 			return true;
@@ -656,20 +805,44 @@ public class PlayerService extends BaseReqService {
 		// if (requestType == 31) { }
 
 		ResHeadAndBody rslt = (ResHeadAndBody) data;
+		
 		// gson 将请求的数据，转为了ResponePList数据类型
 		ResponePList plist = (ResponePList) rslt.getBody();
 		List<PlayItemEntity> pList = plist.getpList();
-		if (pList == null || pList.isEmpty())
+		if (pList == null || pList.isEmpty()){
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_HIDE_LOADING, null);
+			
+			if(mData.size() == 0){
+				Toast.makeText(PlayerService.this, "获取数据失败，请重试！", Toast.LENGTH_SHORT).show();
+			}
+			else{
+				//未必最后页
+			}
 			return;
-
+		}
+		
+		ResponsePager pg = (ResponsePager)rslt.getPage();
+		if(pg != null){
+			if(mTotalPage == 0){
+				mTotalPage = pg.getPageCount();
+			}
+			mCurPg = pg.getPageIndex();
+		}
 		
 		mData.addAll(plist.getpList());
-		mCurPg++;
+		//mCurPg++;
 		
 		Log.e(TAG, "Service onPostHandle success, curpg:"+mCurPg);
 		
+		if(bNetFirst){
+			mHandler.sendEmptyMessage(Configer.PlayerMsg.PLAY_MSG);
+			bNetFirst = false;
+			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_NEW_CATE_DATA, null);
+		}
 		Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_PlAYLIST, null);
+		Configer.sendNotice(PlayerService.this, Configer.Action.ACT_HIDE_LOADING, null);
 	};
+	
 	
 	
 	
@@ -722,7 +895,9 @@ public class PlayerService extends BaseReqService {
 			return mRunMode;
 		}
  
-    	
+		public String getCurCateName(){
+			return mCataName;
+		}
     	
     }  
 }

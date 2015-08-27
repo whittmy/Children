@@ -3,6 +3,8 @@ package children.lemoon.reqbased.utils;
 //ok
 import java.security.MessageDigest;
 
+import children.lemoon.Configer;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
@@ -12,6 +14,14 @@ public class MyUtil {
 		return (int) (0.5F + paramFloat * paramContext.getResources().getDisplayMetrics().density);
 	}
 
+	
+	public static  String getSign(long ts){
+		String org = ts+ Configer.COM_KEY;
+		String ret  = Md5Util.MD5(org);
+		return ret;
+	}
+	
+	
 	// ver3 ===============
 	public static final String mySign(String p1, String p2, String p3) {
 

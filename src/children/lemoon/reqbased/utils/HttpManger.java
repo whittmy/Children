@@ -11,6 +11,7 @@ import children.lemoon.Configer;
 import children.lemoon.reqbased.db.DbUtil;
 import children.lemoon.reqbased.entry.BasePaserMessageUtil;
 import children.lemoon.reqbased.entry.ControlcurrentThread;
+import children.lemoon.utils.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import logger.lemoon.Logger;
+
 
 public class HttpManger {
 	static int lastRequestType = -1;

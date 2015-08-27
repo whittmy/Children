@@ -23,7 +23,9 @@ import children.lemoon.reqbased.BaseReqActivity;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.utils.HttpManger;
 import children.lemoon.ui.loading.CustomProgressDialog;
-
+import children.lemoon.ui.toast.ToastUtils;
+import children.lemoon.ui.view.BatteryImgView;
+ 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -36,6 +38,7 @@ import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
@@ -46,27 +49,19 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity{
 	private Context mContext;
 	BtnClickListener listener = new BtnClickListener();
 	
+	BatteryImgView battery;
+	boolean bexit= false;
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		findViewById(R.id.btn_audio).setOnClickListener(listener);
-		findViewById(R.id.btn_video).setOnClickListener(listener);
-		findViewById(R.id.btn_local).setOnClickListener(listener);
-		findViewById(R.id.btn_local_video).setOnClickListener(listener);
-		findViewById(R.id.btn_prev).setOnClickListener(listener);
-		findViewById(R.id.btn_play).setOnClickListener(listener);
-		findViewById(R.id.btn_pause).setOnClickListener(listener);
-		findViewById(R.id.btn_next).setOnClickListener(listener);
-		
-		
-		findViewById(R.id.btn_home).setOnClickListener(listener);
-		
+		battery = (BatteryImgView)findViewById(R.id.battery);
 		
 		findViewById(R.id.btn_1).setOnClickListener(listener);
 		findViewById(R.id.btn_2).setOnClickListener(listener);
@@ -79,98 +74,68 @@ public class MainActivity extends Activity{
 		findViewById(R.id.btn_9).setOnClickListener(listener);	
 		findViewById(R.id.btn_10).setOnClickListener(listener);	
 		
+
+//		new Thread(new Runnable(){
+//			@Override
+//			public void run() {
+//				// TODO Auto-generated method stub
+//				int i = 0;
+//				while(!bexit && i<=100){
+//					battery.drawByScale(i);
+//					i+=2;
+//					try {
+//						Thread.sleep(100);
+//					} catch (InterruptedException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//				}
+//				
+//			}
+//		}).start();
 		
-//		CustomProgressDialog dlg = CustomProgressDialog.createDialog(this);
-//		dlg.show();
-//		
+		
+		
 	}
 
-
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		// TODO Auto-generated method stub
+		
+		if(event.getAction()==MotionEvent.ACTION_DOWN)
+			ToastUtils.showIconToast(this, "xxxxxxxxxx");
+		return super.onTouchEvent(event);
+	}
+	
+	 @Override
+	protected void onPause() {
+		// TODO Auto-generated method stub
+		super.onPause();
+		bexit = true;
+	}
+	
 	class BtnClickListener implements View.OnClickListener{
 		@Override
 		public void onClick(View v) {
 			// TODO Auto-generated method stub
-			if(v.getId() == R.id.btn_audio){
-//				Intent it = new Intent(MainActivity.this, MuPlayer.class);
-//				it.putExtra("curCata",  "_debug:儿童分类");
-//				it.putExtra("cataId", 100);
-//				MainActivity.this.startActivity(it);
-				
-				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
-				it.putExtra("curCata", "国学教育");
-				it.putExtra("cataId", 1000);				
-				startActivity(it);				
-				
-				
-			}
-			else if(v.getId() == R.id.btn_home){
-				//Intent i = new Intent(Intent.ACTION_VIEW);
-				//i.setData(Uri.parse("http://192.168.2.104/html5/lufylegend.js-lufylegend-1.9.9/examples/demo/rpg/"));
-				
-				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
-				it.putExtra("curCata",  "_debug:儿童分类");
-				it.putExtra("cataId", 1001);				
-				
-				startActivity(it);
-			}
-			else if(v.getId() == R.id.btn_local){
-				Intent it = new Intent(MainActivity.this, MuPlayer.class);
-				it.putExtra("curCata",  "_debug:本地音乐测试");
-				it.putExtra("cataId", 1);
-				it.putExtra("localpath", "/mnt/extsd/音乐");
-				MainActivity.this.startActivity(it);
-			}
-			else if(v.getId() == R.id.btn_video){
-				Intent it = new Intent(MainActivity.this, Player.class);
-				//it.putExtra("localpath", "/mnt/external_sd/儿歌");
-				it.putExtra("cataId", 2);
-				MainActivity.this.startActivity(it);
-			}
-			else if(v.getId() == R.id.btn_local_video){
-				Intent it = new Intent(MainActivity.this, Player.class);
-				it.putExtra("localpath", "/mnt/extsd/儿歌");
-				it.putExtra("cataId", 23);
-				MainActivity.this.startActivity(it);				
-			}
-			else if(v.getId() == R.id.btn_next){
-				String []args = new String[2];
-				//args[0] = "listPosition"; args[1] = String.format("%d", mIService.getCurPos());
-				args[0] = "MSG"; args[1]= String.format("%d", Configer.PlayerMsg.NEXT_MSG);
-				Configer.sendNotice(MainActivity.this, Configer.Action.SVR_CTL_ACTION, args);	
-			}
-			else if(v.getId() == R.id.btn_play){
-				String[] param = new String[2];
-				param[0] = "MSG"; param[1] = String.format("%d", Configer.PlayerMsg.CONTINUE_MSG) ;
-				Configer.sendNotice(MainActivity.this, Configer.Action.SVR_CTL_ACTION, param);
-			}			
-			else if(v.getId() == R.id.btn_pause){
-				String[] param = new String[2];
-				param[0] = "MSG"; param[1] = String.format("%d", Configer.PlayerMsg.PAUSE_MSG) ;
-				Configer.sendNotice(MainActivity.this, Configer.Action.SVR_CTL_ACTION, param);
-			}
-			else if(v.getId() == R.id.btn_prev){
-				String []args = new String[2];
-				args[0] = "MSG"; args[1]= String.format("%d", Configer.PlayerMsg.PRIVIOUS_MSG);
-				Configer.sendNotice(MainActivity.this, Configer.Action.SVR_CTL_ACTION, args);
-			}
-			else if(v.getId() == R.id.btn_1){
+			if(v.getId() == R.id.btn_1){
 				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
 				it.putExtra("curCata",  "生活常识");
-				it.putExtra("cataId", 10000009);				
+				it.putExtra("cataId", 3);					
 				
 				startActivity(it);
 			}
 			else if(v.getId() == R.id.btn_2){
 				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
-				it.putExtra("curCata",  "国学教育");
-				it.putExtra("cataId", 10000009);				
+				it.putExtra("curCata", "国学教育");
+				it.putExtra("cataId", 2);					
 				
 				startActivity(it);			 
 			}
 			else if(v.getId() == R.id.btn_3){
 				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
 				it.putExtra("curCata",  "数理思维");
-				it.putExtra("cataId", 10000009);				
+				it.putExtra("cataId", 6);				
 				
 				startActivity(it);				 
 			}
@@ -185,28 +150,28 @@ public class MainActivity extends Activity{
 			else if(v.getId() == R.id.btn_5){
 				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
 				it.putExtra("curCata",  "自然科学");
-				it.putExtra("cataId", 10000009);				
+				it.putExtra("cataId", 4);				
 				
 				startActivity(it);				 
 			}
 			else if(v.getId() == R.id.btn_6){
 				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
 				it.putExtra("curCata",  "语言发展");
-				it.putExtra("cataId", 10000009);				
+				it.putExtra("cataId", 5);				
 				
 				startActivity(it);				 
 			}
 			else if(v.getId() == R.id.btn_10){
 				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
 				it.putExtra("curCata",  "动画城");
-				it.putExtra("cataId", 10000009);				
+				it.putExtra("cataId", 1);				
 				
 				startActivity(it);				 
 			}			
 			else if(v.getId() == R.id.btn_7){
 				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
 				it.putExtra("curCata",  "音乐");
-				it.putExtra("cataId", 10000009);				
+				it.putExtra("cataId", 7);				
 				
 				startActivity(it);		 
 			}

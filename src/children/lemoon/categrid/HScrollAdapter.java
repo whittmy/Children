@@ -1,10 +1,11 @@
 package children.lemoon.categrid;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import logger.lemoon.Logger;
+
 
 import com.devsmart.android.ui.HorizontalListView;
 import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiskCache;
@@ -27,10 +28,13 @@ import children.lemoon.myrespone.PlayItemEntity;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.support.v4.util.LongSparseArray;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,12 +56,16 @@ public class HScrollAdapter extends BaseAdapter {
 	ImageLoader mLoader;
 	
 	private int mIdx = -1;	//代表该adapter再其数组中的下标
-	private int mTypeid = -1; //代表该adapter对应数据的类别的id，便于再次或许下一页的数据
+	private String mTypeid = "-1"; //代表该adapter对应数据的类别的id，便于再次或许下一页的数据
 	private int mPgidx = 1; // 当前的页码
 	LayoutInflater mFlater;
 	
 	int itemWidth, itemHeight;
-	public HScrollAdapter(Activity paramActivity, LinkedList<PlayItemEntity> paramLinkedList, ImageLoader loader) {
+	
+	HashMap<String,Long> mCourseAndDownIdMap ; //保存课程id与其下载id的对应关系
+	LongSparseArray<View> mDownIdAndViewMap; //保存下载id与其对应的进度view的对应关系
+	
+	public HScrollAdapter(Activity paramActivity, LinkedList<PlayItemEntity> paramLinkedList, ImageLoader loader, HashMap<String,Long> ar1, LongSparseArray<View>ar2 ) {
 		this.context = paramActivity;
 		this.data = paramLinkedList;
 		mFlater = LayoutInflater.from(paramActivity);
@@ -67,6 +75,9 @@ public class HScrollAdapter extends BaseAdapter {
 		paramActivity.getWindowManager().getDefaultDisplay().getMetrics(metric);
 		itemWidth = 20;//metric.widthPixels / 6;     // 屏幕宽度（像素）
 		itemHeight = 100;   // 屏幕高度（像素）
+		
+		mCourseAndDownIdMap = ar1;
+		mDownIdAndViewMap = ar2;
 	}
 
 	
@@ -77,10 +88,10 @@ public class HScrollAdapter extends BaseAdapter {
 		return mIdx;
 	}
 	
-	public void setTypeId(int i){
+	public void setTypeId(String i){
 		mTypeid = i;
 	}
-	public int getTypeId(){
+	public String getTypeId(){
 		return mTypeid;
 	}
 	
@@ -112,6 +123,7 @@ public class HScrollAdapter extends BaseAdapter {
 	 
 	public View getView(int paramInt, View v, ViewGroup paramViewGroup) {
 		Holder hold;
+		PlayItemEntity pie = (PlayItemEntity) this.data.get(paramInt);
 		if (v == null) {
 			v = mFlater.inflate(R.layout.act_cate_hlist_item, null); //因为 HorizontalListView extends AdapterView，而AdapterView又不支持addView，所以无法使用paramViewGroup
 			
@@ -121,24 +133,38 @@ public class HScrollAdapter extends BaseAdapter {
 			
 			hold.title = ((TextView) v.findViewById(R.id.tv_title));
 			
-			hold.bg = (ImageView)v.findViewById(R.id.hlist_item_bg);
-			hold.bg.setLayoutParams(new RelativeLayout.LayoutParams(247, 157));
+			//hold.bg = (ImageView)v.findViewById(R.id.hlist_item_bg);
+			hold.bg = (RelativeLayout)v.findViewById(R.id.hlist_item_bg);
+			//hold.bg.setLayoutParams(new RelativeLayout.LayoutParams(247, 157));  //2015.8.14，修正频繁回调horizontallistview的onLayout函数问题，具体见act_cate_hlist_item.xml文件
 			v.setTag(hold);
+			
+			//若是课件，便考虑下载的事情
+			if(pie.getType() == 10){
+				String id = pie.getIds();
+				Long downid = mCourseAndDownIdMap.get(id); //查询是否有元素已经触发下载了
+				if(downid != null){
+					//有下载记录，则保存view与downid的对应关系
+					mDownIdAndViewMap.put(downid, v.findViewById(R.id.dlprogress));
+				}
+			}
+			
+			//hold.bg.setBackgroundResource(mBGs[paramInt%3]);
 		}
  
 		hold = (Holder) v.getTag();
-		PlayItemEntity pie = (PlayItemEntity) this.data.get(paramInt);
 		hold.title.setText(pie.getName());
-		mLoader.displayImage(pie.getPic(), hold.icon);
+		//mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
 
-		Log.e("", "pos:"+paramInt+", mod="+paramInt%3);
 		hold.bg.setBackgroundResource(mBGs[paramInt%3]);
-
+		
+		
 		return v;
 	}
 
 	class Holder {
-		public ImageView icon, bg;
+		public ImageView icon;
+		//public ImageView  bg;
+		public RelativeLayout bg;
 		public TextView title;
 
 	}

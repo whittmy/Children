@@ -51,17 +51,17 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(cx)
 		        .memoryCacheExtraOptions(112, 130) // default = device screen dimensions
 		        .diskCacheExtraOptions(112, 130, null)
-		        .threadPoolSize(3) // default
+		        .threadPoolSize(3) // default 3
 		        .threadPriority(Thread.NORM_PRIORITY - 2) // default
 		        .tasksProcessingOrder(QueueProcessingType.FIFO) // default
 		        .denyCacheImageMultipleSizesInMemory()
-		        .memoryCache(new LruMemoryCache(2 * 1024 * 1024))
-		        .memoryCacheSize(2 * 1024 * 1024)
-		        .memoryCacheSizePercentage(13) // default
+		        //.memoryCache(new LruMemoryCache(2 * 1024 * 1024))
+		        //.memoryCacheSize(2 * 1024 * 1024)
+		        //.memoryCacheSizePercentage(13) // default
 		        .diskCache(new UnlimitedDiskCache(cacheDir)) // default,  设置带时限的文件缓存是不和要求的，如果我获得不了之前文件，哪怕其过期了，我也删除不了
 		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
 		        .diskCacheFileCount(10000)			//10000 pics    
-		        .writeDebugLogs()				// Log.d()
+		        //.writeDebugLogs()				// Log.d()
 		        .defaultDisplayImageOptions(new Builder()
 		        								.cacheOnDisc(true)
 		        								.cacheOnDisk(true)
@@ -89,6 +89,12 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		return position;
 	}
 
+	boolean isEmtpy(String s){
+		if(s==null || s.isEmpty())
+			return true;
+		return false;
+	}
+	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		ViewHolder viewHolder = null;
@@ -105,15 +111,10 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		}
  
 		PlayItemEntity pie = mDatas.get(position);
-//		MyImageLoadTask imgLoader = new MyImageLoadTask(viewHolder.mImg, 80, 80);
-//		if (!TextUtils.isEmpty(pie.getPic())) {
-//			imgLoader.execute(new String[] { pie.getPic() });
-//		}
-		
-		mLoader.displayImage(pie.getPic(), viewHolder.mImg);
-		
-		//viewHolder.mImg.setImageResource(R.drawable.mv_bg_default);
-		
+ 
+		mLoader.displayImage(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), viewHolder.mImg);
+		//Log.e("", "pos:"+position);
+ 		
 		if(mAct.mHListView.getClickPos() == position){
 			viewHolder.mImgPlaying.setVisibility(View.VISIBLE);
 		}

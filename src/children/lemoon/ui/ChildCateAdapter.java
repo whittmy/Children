@@ -23,8 +23,9 @@ import children.lemoon.R.id;
 import children.lemoon.R.layout;
 import children.lemoon.myrespone.RecommendEntity;
 import children.lemoon.utils.BitmapUtil;
+import children.lemoon.utils.Logger;
 
-import logger.lemoon.Logger;
+
 
 public class ChildCateAdapter extends BaseAdapter {
 	private static final String TAG = "ChildCateAdapter";

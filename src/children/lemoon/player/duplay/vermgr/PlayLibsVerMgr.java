@@ -1,5 +1,6 @@
 package children.lemoon.player.duplay.vermgr;
 
+ 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,7 +28,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import logger.lemoon.Logger;
+
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -50,6 +51,8 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
+
+import children.lemoon.utils.Logger;
 
 import com.baidu.cyberplayer.utils.VersionManager.CPU_TYPE;
 import com.baidu.cyberplayer.utils.VersionManager.RequestCpuTypeAndFeatureCallback;
@@ -93,67 +96,62 @@ public class PlayLibsVerMgr {
 	}
 
 	public void vtChk() {
-		// 实际应该检查，是否有新版本的so文件，不过目前没有维护了，就不检查更新
-		// if(Vitamio.isInitialized(mCx))
-		// return;
-		//
-		// int type = Vitamio.getVitamioType();
-		// final String soUrl =
-		// "http://www.nybgjd.com/3dclub/vermgr/vtsoupgrade/" + type;
-		//
-		//
-		// AsyncHttpClient client = new AsyncHttpClient();
-		// client.get(soUrl, new FileAsyncHttpResponseHandler(mCx) {
-		// @Override
-		// public void onSuccess(int arg0, Header[] arg1, File arg2) {
-		// // TODO Auto-generated method stub
-		// if(arg2 == null || arg2.length()< 15){
-		// Logger.LOGD("vtso has not get successful");
-		// return;
-		// }
-		//
-		//
-		// // String md5 = null;
-		// // for(Header h : arg1){
-		// // if(h.getName().equals("Content-MD5")){
-		// // md5 = h.getValue();
-		// // break;
-		// // }
-		// // }
-		// //
-		// // if(md5 == null)
-		// // return;
-		//
-		// try {
-		// String dlfileMd5 = getMd5ByFile(arg2);
-		// // if (!md5.equalsIgnoreCase(dlfileMd5))
-		// // return;
-		//
-		// //准备loadlibrary
-		// if(Vitamio.initialize(mCx, arg2)){
-		// Logger.LOGE("", "load vitamio successfull");
-		// }
-		//
-		// } catch (FileNotFoundException e1) {
-		// // TODO Auto-generated catch block
-		// e1.printStackTrace();
-		// } catch (IOException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// } catch (Exception e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-		// }
-		//
-		// @Override
-		// public void onFailure(int arg0, Header[] arg1, Throwable arg2, File
-		// arg3) {
-		// // TODO Auto-generated method stub
-		//
-		// }
-		// });
-		//
+//		// 实际应该检查，是否有新版本的so文件，不过目前没有维护了，就不检查更新
+//		if (Vitamio.isInitialized(mCx))
+//			return;
+//
+//		int type = Vitamio.getVitamioType();
+//		final String soUrl = "http://www.nybgjd.com/3dclub/vermgr/vtsoupgrade/" + type;
+//
+//		AsyncHttpClient client = new AsyncHttpClient();
+//		client.get(soUrl, new FileAsyncHttpResponseHandler(mCx) {
+//			@Override
+//			public void onSuccess(int arg0, Header[] arg1, File arg2) {
+//				// TODO Auto-generated method stub
+//				if (arg2 == null || arg2.length() < 15) {
+//					Logger.LOGD("vtso has not get successful");
+//					return;
+//				}
+//
+//				// String md5 = null;
+//				// for(Header h : arg1){
+//				// if(h.getName().equals("Content-MD5")){
+//				// md5 = h.getValue();
+//				// break;
+//				// }
+//				// }
+//				//
+//				// if(md5 == null)
+//				// return;
+//
+//				try {
+//					String dlfileMd5 = getMd5ByFile(arg2);
+//					// if (!md5.equalsIgnoreCase(dlfileMd5))
+//					// return;
+//
+//					// 准备loadlibrary
+//					if (Vitamio.initialize(mCx, arg2)) {
+//						Logger.LOGE("", "load vitamio successfull");
+//					}
+//
+//				} catch (FileNotFoundException e1) {
+//					// TODO Auto-generated catch block
+//					e1.printStackTrace();
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				} catch (Exception e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//
+//			@Override
+//			public void onFailure(int arg0, Header[] arg1, Throwable arg2, File arg3) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//		});
 
 	}
 

@@ -29,7 +29,7 @@
         android:layout_width="72dp"
         android:layout_height="30dp"
         android:id="@+id/header_title"
-        android:textSize="18.0sp"
+        android:textSize="16.0sp"
         android:textColor="#824912"
         android:background="#00ff0000"
         android:singleLine="true"

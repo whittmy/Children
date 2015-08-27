@@ -26,7 +26,7 @@ import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.RecommendEntity;
 import children.lemoon.utils.BitmapUtil;
 
-import logger.lemoon.Logger;
+
 
 public class SongListAdapter extends BaseAdapter {
 	private static final String TAG = "SongListAdapter";

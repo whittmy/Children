@@ -70,7 +70,7 @@ public class LoadDataSrv extends Service {
 				Long loadingDate = Long.valueOf(file.lastModified());
 				if (System.currentTimeMillis() - loadingDate.longValue() < 8*3600000) {
 					
-					Log.e("", "################earlyer！！！");
+					Log.e("", "################earlyer - loadings data ！！！");
 					
 					return super.onStartCommand(intent, flags, startId);
 				}

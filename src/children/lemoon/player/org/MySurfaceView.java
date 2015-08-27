@@ -16,7 +16,7 @@ package children.lemoon.player.org;
  * limitations under the License.
  */
 
-import logger.lemoon.Logger;
+
 import android.app.Activity;
 import android.content.Context;
 import android.media.MediaPlayer;

@@ -17,7 +17,7 @@ public class ResponsePager {
 			throw new Exception();
 		}
 	}
-
+	//总集数
 	public int getCount() {
 		return this.count;
 	}

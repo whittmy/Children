@@ -1,62 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 
+该文件调整要非常慎重，稍有不慎，可能导致HorizontalListView的onLayout被无限调用(当稍微把item向左移动一点儿就不会被调用了，很奇怪)。
+就原因来说，不是HorizontalListView的问题，人家还是比较成熟的，那问题出在自己的身上。
+就是item(该布局)中的大小的计算可能模棱两可了，查了view的绘制原理，太复杂，研究不下去，最终发现本view中的布局有些问题。
+原布局：
+<RelativeLayout>		该root点属性无法生效，因为inflate中的root为空，不为空不行，因为横向滑动的实现AdapterView不支持addchild，好像如此，没有细查。
+	<ImageView/> 		bg，因为root属性无效，所以需要一个view占着位置、大小，我将其作为背景
+	<FrameLayout/>     这部分为item图片
+	<TextView/>        文本
+	
+该布局本来就问题，但是在Adpater中创建view时，涉及到改变上面bg图片的大小的情况(通过代码LayoutParams， 或在xml设定imageview的android:scaleType="fitXY")，就会导致无限回调onLayout函数。
 
-<!-- 顶层RelativeLayout的宽高无效，在代码中以hlist_item_bg的尺寸，定作整个item背景尺寸 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content" 
-    android:paddingLeft="7dp"
-    android:paddingRight="7dp">
+所以不得不舍弃用图片‘占位’的想法，在原root上之外再包一层layout，然后设置第二层的RelativeLayout为固定大小，getview中设置该layout的布局，好像就啥问题。
 
-    <ImageView
-   	    android:id="@+id/hlist_item_bg"
-   	    android:layout_width="wrap_content"
-   	    android:layout_height="wrap_content" />
+ -->
+<LinearLayout 
+     xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"  
+	android:padding="0dp"
+	android:layout_margin="0dp"
+	android:orientation="vertical"  >
     
-    <FrameLayout
-        android:id="@+id/imgcontainer"
-       	android:layout_width="151dp"
-       	android:layout_height="90dp"
-       	android:layout_alignParentTop="true"
-       	android:layout_marginTop="27dp"
-       	android:layout_alignParentLeft="true"
-	   	android:layout_marginLeft="62dp"   
-       	android:focusable="true"
-       	android:padding="0dp" >
-
-	   <ImageView
-	        android:id="@+id/iv_icon"
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:padding="0dp"
-			android:scaleType="fitXY"
-	        android:focusable="false"/>  
-	   <ProgressBar 
-	        android:id="@+id/dlprogress"
-	        style="?android:attr/progressBarStyleHorizontal"
-	        android:layout_width="match_parent"
-	        android:layout_height="7dp"
-	        android:max="100"
-	        android:progress="10"
-	        android:layout_gravity="bottom|center_horizontal"
-	        android:visibility="visible"
-	         />      
-    </FrameLayout>
-
-
-    <TextView
-        android:id="@+id/tv_title"
-        android:layout_width="173dp"
-        android:layout_height="wrap_content"
-
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="51dp"
-        
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="3dp"
-        android:textSize="20sp"
-        android:gravity="center"
-        android:singleLine="true"
-        android:textColor="#ffffff"
-        android:background="#00ff0000"  />
-
-</RelativeLayout>
+	<RelativeLayout
+	    android:id="@+id/hlist_item_bg"
+	    android:layout_width="247dp"
+	    android:layout_height="157dp" 
+		android:layout_marginLeft="7dp"
+		    android:padding="0dp"
+	    android:layout_marginRight="14dp" >
+	<!--   
+	    <ImageView
+	   	    android:id="@+id/hlist_item_bg"
+	   	    android:layout_width="wrap_content"
+	   	    android:layout_height="fill_parent"
+	   	    android:layout_alignParentLeft="true"
+	   	    android:layout_marginLeft="0dp"
+	   	    android:visibility="gone"
+	   	    android:scaleType="fitXY"
+	   	     />
+	 -->  
+	    <FrameLayout
+	        android:id="@+id/imgcontainer"
+	       	android:layout_width="151dp"
+	       	android:layout_height="90dp"
+	       	android:layout_alignParentTop="true"
+	       	android:layout_marginTop="27dp"
+	       	android:layout_alignParentLeft="true"
+		   	android:layout_marginLeft="62dp"   
+	       	android:focusable="true"
+	       	android:padding="0dp" >
+	
+		   <ImageView
+		        android:id="@+id/iv_icon"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:padding="0dp"
+				android:scaleType="fitXY"
+		        android:focusable="false"/>  
+		   <ProgressBar 
+		        android:id="@+id/dlprogress"
+		        style="?android:attr/progressBarStyleHorizontal"
+		        android:layout_width="match_parent"
+		        android:layout_height="7dp"
+		        android:max="100"
+		        android:progress="10"
+		        android:layout_gravity="bottom|center_horizontal"
+		        android:progressDrawable="@drawable/progressbar_drawable"
+		        android:visibility="invisible"
+		         />      
+	    </FrameLayout>
+	
+	
+	    <TextView
+	        android:id="@+id/tv_title"
+	        android:layout_width="173dp"
+	        android:layout_height="wrap_content"
+	
+	        android:layout_alignParentLeft="true"
+	        android:layout_marginLeft="51dp"
+	        
+	        android:layout_alignParentBottom="true"
+	        android:layout_marginBottom="0dp"
+	        android:textSize="20sp"
+	        android:gravity="center|bottom"
+	        android:singleLine="true"
+	        android:textColor="#ffffff"  />
+	
+	</RelativeLayout>    
+</LinearLayout>

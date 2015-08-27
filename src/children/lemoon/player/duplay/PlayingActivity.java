@@ -49,6 +49,7 @@ import children.lemoon.player.duplay.utils.VerticalSeekBar;
 import children.lemoon.player.duplay.utils.VideoGestureDetector;
 import children.lemoon.player.duplay.utils.VideoGestureDetector.VideoGestureDetectListenner;
 import children.lemoon.player.duplay.vermgr.PlayLibsVerMgr;
+import children.lemoon.utils.Logger;
 
 import com.baidu.cyberplayer.core.BVideoView;
 import com.baidu.cyberplayer.utils.VersionManager;
@@ -75,7 +76,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 //import lib.runningman.RunningMan;
-import logger.lemoon.Logger;
+
 
 import org.apache.http.Header;
 

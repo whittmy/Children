@@ -8,7 +8,7 @@ import children.lemoon.reqbased.entry.BaseEntity;
 public class PlayItemEntity extends BaseEntity {
 	private static final long serialVersionUID = 4848129606284363626L;
 
-	private int id;
+	private String id;
 	private int fileSize;
 	private int playcnt;
 
@@ -22,11 +22,11 @@ public class PlayItemEntity extends BaseEntity {
 	
 	private int type;
 	
-	public int getId() {
+	public String getIds() {
 		return this.id;
 	}
 
-	public void setId(int paramInt) {
+	public void setIds(String paramInt) {
 		this.id = paramInt;
 	}
 

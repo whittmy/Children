@@ -9,6 +9,7 @@ import android.util.Log;
 
 import children.lemoon.Configer;
 import children.lemoon.reqbased.entry.BasePaserMessageUtil;
+import children.lemoon.utils.Logger;
 
 import com.google.gson.Gson;
 
@@ -28,7 +29,7 @@ import java.util.Map;
 import java.util.zip.ZipOutputStream;
 
 //import lib.runningman.RunningMan;
-import logger.lemoon.Logger;
+
 
 public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 	Map<String, Object> bodyRequest;
@@ -86,6 +87,8 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 	protected Message doInBackground(RequestMethod... param) {
 		URL ur = null; // v12
 		String resp = ""; // v10
+		
+		long bgtm = System.currentTimeMillis();
 		try {
 			ur = new URL(url);
 
@@ -94,42 +97,68 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 			switch (s) {
 			case 1: // switch0 get
 				BufferedReader reader = null; // reader
-				try {
-					String requestParam = "?header=" + URLEncoder.encode(jsonObjectHeader, "utf-8"); // v9
-					requestParam += "&body=" + URLEncoder.encode(jsonObjectBody, "utf-8");
+				
+				// + retry
+				for(int retries=0; retries < 3; retries++){
+					boolean bok = false;
+					try {
+						String requestParam = "?header=" + URLEncoder.encode(jsonObjectHeader, "utf-8"); // v9
+						requestParam += "&body=" + URLEncoder.encode(jsonObjectBody, "utf-8");
 
-					URL getRequestUrl = new URL(url + requestParam);
-					Logger.LOGE("Request", getRequestUrl.toString());
+						URL getRequestUrl = new URL(url + requestParam);
+						Logger.LOGE("Request", getRequestUrl.toString());
+						urlConnDownLoad = (HttpURLConnection) getRequestUrl.openConnection();
+						urlConnDownLoad.setConnectTimeout(15000);
+						urlConnDownLoad.setReadTimeout(15000);
+						urlConnDownLoad.setInstanceFollowRedirects(true);
+						urlConnDownLoad.connect();
+						reader = new BufferedReader(new InputStreamReader(urlConnDownLoad.getInputStream()));// v8
 
-					urlConnDownLoad = (HttpURLConnection) getRequestUrl.openConnection();
-					urlConnDownLoad.setConnectTimeout(0x3a98);
-					urlConnDownLoad.setReadTimeout(0x3a98);
-					urlConnDownLoad.setInstanceFollowRedirects(true);
-					urlConnDownLoad.connect();
-					reader = new BufferedReader(new InputStreamReader(urlConnDownLoad.getInputStream()));// v8
-
-					String str = null; // v11
-					// goto2
-					while ((str = reader.readLine()) != null) {
-						// cond1
-						resp += str;
-					}
-
-					responseResult = resp;
-					reader.close();
-					urlConnDownLoad.disconnect();
-				} catch (Exception e) {
-					// TODO: handle exception
-					e.printStackTrace();
-					if (reader != null)
-						try {
-							reader.close();
-						} catch (IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
+						String str = null; // v11
+						// goto2
+						while ((str = reader.readLine()) != null) {
+							// cond1
+							resp += str;
 						}
+						responseResult = resp;
+						
+//						reader.close();
+//						urlConnDownLoad.disconnect();	
+						bok = true;
+					}
+					catch (MalformedURLException e) {
+				        // TODO Auto-generated catch block
+				        e.printStackTrace();
+					}
+					catch (Exception e) {
+						// TODO: handle exception
+						e.printStackTrace();
+					}	
+					finally{
+				        if(urlConnDownLoad != null){
+				        	urlConnDownLoad.disconnect();
+				        }
+				        
+				        if(reader != null){
+				        	try {
+								reader.close();
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+				        }
+				    }
+					
+					if(bok){
+						Log.e("", "#################delt="+(System.currentTimeMillis()-bgtm));
+						break;
+					}
+					
+					try{
+						Thread.sleep(200);
+					}
+					catch(Exception e){}
 				}
-
 				// go goto1
 				return null;
 
@@ -140,8 +169,8 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 					urlConnDownLoad.setDoInput(true);
 					urlConnDownLoad.setRequestMethod("POST");
 					urlConnDownLoad.setUseCaches(false);
-					urlConnDownLoad.setConnectTimeout(0x3a98);
-					urlConnDownLoad.setReadTimeout(0x3a98);
+					urlConnDownLoad.setConnectTimeout(40000);
+					urlConnDownLoad.setReadTimeout(40000);
 					urlConnDownLoad.setInstanceFollowRedirects(true);
 					urlConnDownLoad.setRequestProperty("Content-type", "text/html;charset=UTF-8");
 					urlConnDownLoad.connect();
@@ -211,39 +240,19 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 		// localHashMap.put("body", localGson.toJson(this.bodyRequest));
 		this.jsonObjectHeader = localGson.toJson(wrapHeader());
 		this.jsonObjectBody = localGson.toJson(this.bodyRequest);
-//
-//		if (bshowLoading && mRunMan != null)
-//			mRunMan.show(null);
+ 
 	}
 
 	public Map<String, String> wrapHeader() {
 		HashMap<String, String> localHashMap = new HashMap<String, String>();
-		// ver3
-		// int versionCode = DeviceUtil.getVersionCode(context);
-		// String versionName = DeviceUtil.getVersionName(context);
-		// String timeStamp = TimeUtil.getTimeStamp();
-		// localHashMap.put("versionCode", String.valueOf(versionCode));
-		// localHashMap.put("versionName", versionName);
-		// localHashMap.put("packageName", context.getPackageName());
-		// localHashMap.put("reqtime", timeStamp);
-		// localHashMap.put("sign", MyUtil.mySign(versionName, Md5Util.getS1(),
-		// timeStamp));
-
-		localHashMap.put("sign", "22");
-		localHashMap.put("client", String.valueOf(Configer.OEM_ID));
-
-		// ver3
-		// localHashMap.put("retStatus", "");
-		// localHashMap.put("retMessage", "");
-		// localHashMap.put("devId", "");
-		// localHashMap.put("devType", "2");
-		// localHashMap.put("userType", "0");
-		// localHashMap.put("appId", "");
-		// localHashMap.put("funcId", "");
-		// localHashMap.put("userId", "");
-		// localHashMap.put("accessToken", "");
-		// localHashMap.put("appVersion", "");
-		// localHashMap.put("osVersion", "");
+ 		 int versionCode = DeviceUtil.getVersionCode(context);
+ 		 String timeStamp = TimeUtil.getTimeStamp();
+ 		 
+		 localHashMap.put("vercode", String.valueOf(versionCode));
+  		 localHashMap.put("reqtime", timeStamp);
+		 localHashMap.put("sign", MyUtil.getSign(Long.valueOf(timeStamp)));
+		 localHashMap.put("mac", DeviceUtil.getMacAddress());
+ 
 		return localHashMap;
 	}
 }

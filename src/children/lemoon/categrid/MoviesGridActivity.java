@@ -4,21 +4,26 @@ import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.app.DownloadManager.Request;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.support.v4.util.LongSparseArray;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -33,6 +38,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,6 +51,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+
+
+import com.dd.database.DatabaseManager;
+import com.dd.database.QueryExecutor;
+import com.dd.my.CateCourseMgrDAO;
 import com.devsmart.android.ui.HorizontalListView;
 import com.devsmart.android.ui.HorizontalListView.OnScrollListener;
 import com.handmark.pulltorefresh.library.PullToRefreshBase;
@@ -73,16 +84,19 @@ import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.entry.ResponsePager;
 import children.lemoon.reqbased.utils.HttpManger;
 import children.lemoon.ui.loading.CustomProgressDialog;
+import children.lemoon.ui.view.BatteryImgView;
+import children.lemoon.ui.view.BatteryRcvBindView;
+import children.lemoon.utils.Logger;
 import children.lemoon.utils.NetworkUtils;
 import children.lemoon.utils.download.DownloadManagerPro;
 import children.lemoon.utils.download.PreferencesUtils;
-
+  
 public class MoviesGridActivity extends BaseReqActivity implements View.OnClickListener, AdapterView.OnItemClickListener  {
 	private MoviesGridAdapter adapter;
 	private LinkedList<PlayItemEntity> data = new LinkedList<PlayItemEntity>();
 	private View goBack;
 	private int mCurrentPageIndex = 1;
-	private int mPageSize = 20;
+	private int mPageSize = 21;
 	private int mTotalPageCount = 9999;
 	private TextView cataName;
 	private int cataTypeId;
@@ -123,7 +137,7 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	
 	private int mLastIdx;
 	private boolean mHReqing=false;
-	private boolean queryHList(int lastidx, int id, int pageidx) {
+	private boolean queryHList(int lastidx, String id, int pageidx) {
 		mHReqing = true;
 		mLastIdx = lastidx;
 		if(!mLoading.isShowing())
@@ -163,17 +177,35 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		unregisterReceiver(completeReceiver);  
 		getContentResolver().unregisterContentObserver(downloadObserver);  
 
-		finish();
+		//finish();
 	}
 	protected void onResume() {
 		super.onResume();
-		downloadObserver = new DownloadChangeObserver();
 		getContentResolver().registerContentObserver(  DownloadManagerPro.CONTENT_URI, true, downloadObserver);
-        completeReceiver = new CompleteReceiver();
+
         /** register download success broadcast **/
         registerReceiver(completeReceiver, new IntentFilter( DownloadManager.ACTION_DOWNLOAD_COMPLETE));
         
         //updateView();
+        
+		registerReceiver(batteryReceiver, new IntentFilter("android.intent.action.BATTERY_CHANGED")); 
+		
+	}
+	
+	
+	HashMap<String,Long> mCourseAndDownIdMap = new HashMap<String,Long>(); //保存课程id与其下载id的对应关系
+	LongSparseArray<View> mDownIdAndViewMap = new LongSparseArray<View>(); //保存下载id与其对应的进度view的对应关系
+	
+	private BatteryRcvBindView batteryReceiver;
+	
+	
+	
+	@Override
+	protected void onStop() {
+		// TODO Auto-generated method stub
+		super.onStop();
+		
+		unregisterReceiver(batteryReceiver);
 	}
 	
 	//pcontainer;
@@ -181,24 +213,50 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		super.onCreate(paramBundle);
 		setContentView(R.layout.act_cate_grid);
 
-		
 		mLoading =  CustomProgressDialog.createDialog(this);
 		mLoading.show();
 		
+		batteryReceiver = new BatteryRcvBindView((BatteryImgView)findViewById(R.id.battery));
+
+
+		DatabaseManager.initializeInstance(this);
+		DatabaseManager.getInstance().executeQuery(new QueryExecutor() { //同步执行
+			@Override
+			public void run(SQLiteDatabase database) {
+				// TODO Auto-generated method stub
+				CateCourseMgrDAO udao = new CateCourseMgrDAO(database, MoviesGridActivity.this); // your class
+				Cursor cursor = udao.selectAll();
+				if(cursor == null){
+		    		Logger.LOGD("", "cate have no data to ...");
+		    		return;
+		    	}
+				
+				for(cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()) {
+ 					 String courseid = cursor.getString(cursor.getColumnIndex(CateCourseMgrDAO.COLUMNS_CSID));
+					 long downid = cursor.getLong(cursor.getColumnIndex(CateCourseMgrDAO.COLUMNS_DWID));
+					 mCourseAndDownIdMap.put(courseid, downid);
+ 		    	} 
+				cursor.close();
+			}
+		});
+		
 		this.goBack = findViewById(R.id.go_back);
 		this.goBack.setOnClickListener(this);		
-		
-		
+ 
 		handler = new MyHandler();
 		mDlMgr = (DownloadManager)getSystemService(DOWNLOAD_SERVICE);  
         downloadManagerPro = new DownloadManagerPro(mDlMgr);
-		
+		downloadObserver = new DownloadChangeObserver();
+        completeReceiver = new CompleteReceiver();
+        
+        
 		//mPrefs = PreferenceManager.getDefaultSharedPreferences(this);  
 		mCacheRoot = StorageUtils.getCacheDirectory(this).getAbsolutePath();
 		
 		cfgImgLoader();
 		this.cataName = ((TextView) findViewById(R.id.tv_movie_type));
 		this.cateGrid = ((MyGridView) findViewById(R.id.gv_movies_list));
+		this.cateGrid.setSelector(new ColorDrawable(Color.TRANSPARENT));
 		this.prvMovieList = ((PullToRefreshScrollView) findViewById(R.id.prv_vr_movies));
 		
 		prvMovieList.setHeaderState(false);
@@ -215,6 +273,10 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 				if (mCurrentPageIndex <= mTotalPageCount) {
 					queryMovies();
 					return;
+				}
+				else{
+					//不用刷新了，因为已经最后一页了
+					prvMovieList.onRefreshComplete();
 				}
 			}
 		});
@@ -239,6 +301,7 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		this.cateGrid.setOnItemClickListener(this);
 		queryMovies();
 	}
+ 
  
 	public void onItemClick(AdapterView<?> paramAdapterView, View paramView, int paramInt, long paramLong) {
 		Adapter adp1 =  paramAdapterView.getAdapter();
@@ -271,25 +334,36 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 //			pie.setDownUrl("http://app.znds.com/down/20150608/vstqjh-2.6.7.2-dangbei.apk");			
 //		} 		
 		
-		if(pie.getType() == 10){
+		if(pie.getType() == 5){
 			//课件
+			final String courseid = pie.getIds();
 			HScrollAdapter adp = (HScrollAdapter)adp1;
-			
-			String idstr = String.valueOf(pie.getId());
+			String idstr = String.valueOf(courseid);
 
 			File f = Environment.getExternalStoragePublicDirectory(DOWNLOAD_FOLDER_NAME);
+			if(!f.exists())
+				f.mkdir();
 			String path = f.getAbsolutePath()+"/";
-			f.mkdir();
-			
-			//如果文件不存在 或者 id没有被保存
-			if(!new File(path+idstr).exists() || PreferencesUtils.getLong(getApplicationContext(), "res_"+idstr)==-1){	
+ 
+			//如果文件不存在
+			if(!new File(path+idstr).exists()){	  //?????
 	    		if(adp.getIdx() >= 0){
+	    			//toast提示
+	    			//MyToast.makeText(MoviesGridActivity.this, "正在下载课件，耐心点儿^_^").show();
+	    			
+	    			//Crouton.makeText(MoviesGridActivity.this, "正在下载课件，耐心点儿^_^", Style.INFO).show();
+	    			
+	    			
+	    			//Crouton.cancelAllCroutons();
+	    			
+	    			
 	    			HorizontalListView hv = mHlistArr.get(adp.getIdx()) ;
 	    			//在ListView中，使用getChildAt(index)的取值，只能是当前可见区域（列表可滚动）的子项！ 即取值范围在 >= ListView.getFirstVisiblePosition() &&  <= ListView.getLastVisiblePosition(); 
 	    			Log.e("", "pos="+paramInt+", firstvispos="+hv.getFirstVisiblePosition()+", rslt="+(paramInt-hv.getFirstVisiblePosition()));
 	     			View v = hv.getChildAt(paramInt-hv.getFirstVisiblePosition());
-	     			View v1 = v.findViewById(R.id.dlprogress);
+	     			final View v1 = v.findViewById(R.id.dlprogress);  //完成时要清除掉
 	     			if(v1.getTag() != null){
+	     				//已经下载
 	     				return;
 	     			}
 	     			
@@ -306,28 +380,66 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		            //sdcard的目录下的 某文件夹  
 		            request.setDestinationInExternalPublicDir(DOWNLOAD_FOLDER_NAME, idstr);  
 		            request.setTitle(pie.getName());   
-		            long downloadId  = mDlMgr.enqueue(request);  
+		            final long downloadId  = mDlMgr.enqueue(request);  
 		            v1.setTag(downloadId);
-		            PreferencesUtils.putLong(getApplicationContext(), "dl_"+downloadId, adp.getIdx());
 		            
+		            PreferencesUtils.putString(getApplicationContext(), "dl_"+downloadId, courseid);  //方便downloadid=>couseid
+		            
+		            //保存数据库
+		            DatabaseManager.getInstance().executeQuery(new QueryExecutor() {
+						@Override
+						public void run(SQLiteDatabase database) {
+							// TODO Auto-generated method stub
+							CateCourseMgrDAO udao = new CateCourseMgrDAO(database, MoviesGridActivity.this); // your class
+							udao.insert(courseid, downloadId);
+							
+				            mCourseAndDownIdMap.put(courseid, downloadId);
+				            mDownIdAndViewMap.put(downloadId, v1);
+						}
+		            });
+
 	                updateView(downloadId);
 	    		}				
 			}
-			else{
+			else
+			{
 				//打开
+				Intent it = new Intent();
+				ComponentName com= new ComponentName("flexplayer.lemoon", "flexplayer.lemoon.MainActivity");  
+				it.setComponent(com);  
+				it.putExtra("courseId", /*14060*/courseid);								
+				startActivity(it);
+				return;
 			}
-			
-			
 		}
-		else if(pie.getType() == 0){
+		//音频 & 音频类别
+		else if(pie.getType() == 0 || pie.getType()==10){
+			//本地测试
+//			Intent it = new Intent();  
+//			it.setComponent(new ComponentName("children.lemoon", "children.lemoon.music.MuPlayer")); 
+//			it.putExtra("curCata",pie.getName());
+//			it.putExtra("localpath", "/mnt/extsd/音乐");
+//			startActivity(it);  
+			
+			//网络
 			Intent it = new Intent(this, MuPlayer.class);
-			it.putExtra("cataId", pie.getId());
+			it.putExtra("cataId", pie.getIds());
 			it.putExtra("curCata",pie.getName());
+			it.putExtra("type", pie.getType());
 			startActivity(it);			
 		}
 		else if(pie.getType() == 4){
+			//本地测试
+//			Intent it = new Intent();  
+//			it.setComponent(new ComponentName("children.lemoon", "children.lemoon.player.org.Player")); 
+//			it.putExtra("curCata",pie.getName());
+//			it.putExtra("localpath", "/mnt/extsd/动画");
+//			startActivity(it);  			
+			
+			//网络
 			Intent it = new Intent(this, Player.class);
-			it.putExtra("cataId", pie.getId());
+			it.putExtra("cataId", pie.getIds());
+			it.putExtra("type", pie.getType());
 			startActivity(it);
 		}
 	}
@@ -356,36 +468,28 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
     }  
 	
 
-	
-	LinkedList<HorizontalListView> mHlistArr = new LinkedList<HorizontalListView>();
+	  
+	LinkedList<HorizontalListView> mHlistArr = new LinkedList<HorizontalListView>(); 
 	LinkedList<HScrollAdapter> mHAdpArr = new LinkedList<HScrollAdapter>();
 	protected void onPostHandle(int paramInt1, Object paramObject1, boolean paramBoolean, int paramInt2, Object paramObject2, Object paramObject3) {
 		super.onPostHandle(paramInt1, paramObject1, paramBoolean, paramInt2, paramObject2, paramObject3);
 		if (paramObject1 == null) {
-			mLoading.cancel();
-			return;
+ 
 		}
-
-		if (paramInt1 == Configer.REQ_TYPE_CATEINFO) {
+		else if (paramInt1 == Configer.REQ_TYPE_CATEINFO) {
 			ResHeadAndBody localResHeadAndBody = (ResHeadAndBody) paramObject1;
 			ResponeResList list = (ResponeResList) localResHeadAndBody.getBody();
- 
-			boolean bhasHeader = false;
-			boolean bhasMain = false;
+			
+			//先刷新全部的
 			if((list.getResList()!=null && list.getResList().size() > 0)){
-				bhasMain = true;
-			}
-			if(list.getHeaderList()!=null && list.getHeaderList().size()>0){
-				bhasHeader = true;
+				this.data.addAll(list.getResList());
+				Logger.LOGD("====================notifyDataSetChanged 1");
+				this.adapter.notifyDataSetChanged();
 			}
 			
-			if(!bhasHeader || !bhasMain)
-				return;
- 
-			this.data.addAll(list.getResList());
-			this.adapter.notifyDataSetChanged();
- 
-			if(mCurrentPageIndex == 1){
+			//再头部的，否则有问题。
+			boolean bhadHeader = false;
+			if(list.getHeaderList()!=null && list.getHeaderList().size()>0 && mCurrentPageIndex == 1){
 				mHlistArr.clear();
 				mHAdpArr.clear();
 				
@@ -394,23 +498,26 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 				
 				if(hList!=null && hList.size()>0){
 					int i = hList.size()-1;
+					bhadHeader = true;
 					for(; i>=0; i--){
 						HeaderItemEntity h = hList.get(i);
+						LinkedList<PlayItemEntity> childlist = new LinkedList<PlayItemEntity>(h.getChildList());
+						if(childlist.size() == 0)
+							continue;
 						
 						View v = getHeaderView(pcontainer, false);
 						TextView tx = (TextView)v.findViewById(R.id.header_title);
 						tx.setText(h.getTitle());
- 
-						
-						LinkedList<PlayItemEntity> childlist = new LinkedList<PlayItemEntity>(h.getChildList());
-						HScrollAdapter adp = new HScrollAdapter(MoviesGridActivity.this, childlist, mLoader);
-						adp.setIdx(i);
-						adp.setTypeId(h.getId());
+
+						HScrollAdapter adp = new HScrollAdapter(MoviesGridActivity.this, childlist, mLoader, mCourseAndDownIdMap, mDownIdAndViewMap);
+						adp.setIdx(i); //setidx,用于其它地方定位"是哪个类别"
+						adp.setTypeId(h.getIds()); // settypeid 用于再次请求，否则怎么去取下一页了，因为“类别”是必须的
 						mHAdpArr.addFirst(adp);
-						
+
 						HorizontalListView hv = (HorizontalListView)v.findViewById(R.id.header_grid);
-						hv.setTag(i); //!!!!!!!!
+						hv.setTag(i); //!!!!!!!! i保存了hview的序号，对应adapter，根据view获取i，然后便可以获取对应的adapter
 						hv.setAdapter(adp);
+						
 						
 						hv.setOnItemClickListener(MoviesGridActivity.this);
 						hv.setOnScrollListener(new OnScrollListener() {
@@ -422,18 +529,18 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 							@Override
 							public void onScroll(View view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 								// TODO Auto-generated method stub
-								Log.e("", "onScroll:  "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
+								//Log.e("", "onScroll:  "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
 
 								if(view != null ){
-									Log.e("", "viewtg="+(Integer)view.getTag());
+									//Log.e("", "viewtg="+(Integer)view.getTag());
 									int idx = (Integer)view.getTag();
 									if(idx<0 || idx >= mHAdpArr.size()){
 										return;
 									}
 									
 									HScrollAdapter adp = mHAdpArr.get(idx);
-									if(!mHReqing && firstVisibleItem+visibleItemCount+5 >= totalItemCount && adp.getCount()>=mPageSize){
-										int id = adp.getTypeId();
+									if(!mHReqing && firstVisibleItem+visibleItemCount+5 >= totalItemCount && adp.getCount()>mPageSize){
+										String id = adp.getTypeId();
 										int pgidx = adp.getPgIdx();
 										queryHList(idx, id, pgidx+1);
 									}
@@ -441,51 +548,78 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 							}
 						});
 						mHlistArr.addFirst(hv);
-						pcontainer.addView(v, 0);						
-							
+						pcontainer.addView(v, 0);	
 						adp.notifyDataSetChanged();
-						//v.findViewById(R.id.grid_header_title_bg).setVisibility(View.VISIBLE);
 					}
  				}
-//				if(bhasHeader){
-//				}
-
-				if(bhasMain){
-					//lable_all
-					MoviesGridActivity.this.findViewById(R.id.lable_all).setVisibility(View.VISIBLE); 
-					MoviesGridActivity.this.findViewById(R.id.maingrid_header_title_bg).setVisibility(View.VISIBLE); 
-					MoviesGridActivity.this.findViewById(R.id.grid_cateall_bg_bottom).setVisibility(View.VISIBLE);
+			}
+	
+			//注意，如果下面的部分整个在头部之前也有问题。
+  			if((list.getResList()!=null && list.getResList().size() > 0)){
+//				this.data.addAll(list.getResList());
+//				this.adapter.notifyDataSetChanged();
+				
+				//lable_all
+				MoviesGridActivity.this.findViewById(R.id.lable_all).setVisibility(View.VISIBLE); 
+				MoviesGridActivity.this.findViewById(R.id.maingrid_header_title_bg).setVisibility(View.VISIBLE); 
+				MoviesGridActivity.this.findViewById(R.id.grid_cateall_bg_bottom).setVisibility(View.VISIBLE);
+				
+				//该句意思是这是最后一页了。
+				if(list.getResList().size()<mPageSize){
+					mTotalPageCount = mCurrentPageIndex;
+					
+					String str = "没有啦！^_^";
+					prvMovieList.setPullLabel(str);
+					prvMovieList.setRefreshingLabel(str);
+					prvMovieList.setReleaseLabel(str);
 				}
-			}			
-			
-			this.mCurrentPageIndex ++;
+				
+				
+				this.mCurrentPageIndex ++;
+			}
+  			else{
+  				if(mCurrentPageIndex == 1 && bhadHeader){
+  					//根本第一页就没有取到数据嘛
+  					mTotalPageCount = 0;
+  				}
+  				else{
+  					mTotalPageCount = mCurrentPageIndex;
+  					mCurrentPageIndex ++;
+  				}
+  				
+				String str = "没有啦！^_^";
+				prvMovieList.setPullLabel(str);
+				prvMovieList.setRefreshingLabel(str);
+				prvMovieList.setReleaseLabel(str);
+  			}
+  			
+  				
 
-			prvMovieList.onRefreshComplete();
-			//Logger.LOGD("+++VRMoviesListActivity++" + list.getMovieList() + "++++++");
 		} else if ((paramInt1 == Configer.REQ_TYPE_HLIST)) {
-			ResHeadAndBody localResHeadAndBody = (ResHeadAndBody) paramObject1;
+			ResHeadAndBody localResHeadAndBody = (ResHeadAndBody)paramObject1;
 			ResponeResList list = (ResponeResList) localResHeadAndBody.getBody();
 			if(mLastIdx<0 || mLastIdx >= mHAdpArr.size()){
-				mLoading.cancel();
 				mHReqing = false;
-				return;
 			}
-			
-			HScrollAdapter adp = mHAdpArr.get(mLastIdx);
-			adp.addData(list.getResList());
-			adp.notifyDataSetChanged();
-			adp.setPgIdx(adp.getPgIdx()+1);
-			mHReqing = false;
+			else{
+				HScrollAdapter adp = mHAdpArr.get(mLastIdx);
+				adp.addData(list.getResList());
+				adp.notifyDataSetChanged();
+				Logger.LOGD("====================notifyDataSetChanged 3");
+				adp.setPgIdx(adp.getPgIdx()+1);
+				mHReqing = false;
+			}
 		}
+		
 		mLoading.cancel();
-
+		prvMovieList.onRefreshComplete();
 		return;
 	}
  
  //////////////////////////////////////////
     public void updateView(long downloadId) {
         int[] bytesAndStatus = downloadManagerPro.getBytesAndStatus(downloadId);
-        handler.sendMessage(handler.obtainMessage(0, bytesAndStatus[0], bytesAndStatus[1], bytesAndStatus[2]));
+        handler.sendMessage(handler.obtainMessage(777, (int)downloadId, 0,(Object)bytesAndStatus/*bytesAndStatus[0], bytesAndStatus[1], bytesAndStatus[2]*/));
     }
     
  
@@ -543,30 +677,68 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	            super.handleMessage(msg);
 	 
 	            switch (msg.what) {
-	            case 0:
-	                int status = (Integer) msg.obj;
+	            case 777:
+	            	final long downid = msg.arg1;
+	                ProgressBar downloadProgress = (ProgressBar)mDownIdAndViewMap.get(downid);
+	                if(downloadProgress == null)
+	                	break;
+	                
+	            	int[]info = (int[])msg.obj;
+	            	int status = info[2];
 	                if (isDownloading(status)) {
-//	                    downloadProgress.setVisibility(View.VISIBLE);
-//	                    downloadProgress.setMax(0);
-//	                    downloadProgress.setProgress(0);
+	                    downloadProgress.setVisibility(View.VISIBLE);
+	                    downloadProgress.setMax(0);
+	                    downloadProgress.setProgress(0);
 
-	 
-	                    if (msg.arg2 < 0) {
-//	                        downloadProgress.setIndeterminate(true);
+	                    if (info[1] < 0) {
+	                        downloadProgress.setIndeterminate(true);
 	                    } else {
-//	                        downloadProgress.setIndeterminate(false);
-//	                        downloadProgress.setMax(msg.arg2);
-//	                        downloadProgress.setProgress(msg.arg1);
+	                        downloadProgress.setIndeterminate(false);
+	                        downloadProgress.setMax(info[1]);
+	                        downloadProgress.setProgress(info[0]);
 	                    }
-	                } else {
-//	                    downloadProgress.setVisibility(View.GONE);
-//	                    downloadProgress.setMax(0);
-//	                    downloadProgress.setProgress(0);
-	 
-	                    if (status == DownloadManager.STATUS_FAILED) {
-	                    	
-	                    } else if (status == DownloadManager.STATUS_SUCCESSFUL) {
-	                    	
+	                }
+	                else {
+	                    downloadProgress.setVisibility(View.GONE);
+	                    downloadProgress.setMax(0);
+	                    downloadProgress.setProgress(0);
+	                    
+	                    
+	                    final String courseid =  PreferencesUtils.getString(getApplicationContext(), "dl_"+downid);
+	                    PreferencesUtils.delKey(MoviesGridActivity.this, "dl_"+downid);
+	                    
+	                    if (status == DownloadManager.STATUS_SUCCESSFUL 
+	                    		|| status == DownloadManager.STATUS_FAILED) {
+	                		DatabaseManager.getInstance().executeQuery(new QueryExecutor() { //同步执行
+	                			@Override
+	                			public void run(SQLiteDatabase database) {
+	                				// TODO Auto-generated method stub
+	                				//清除痕迹
+	                				CateCourseMgrDAO udao = new CateCourseMgrDAO(database, MoviesGridActivity.this); // your class
+	                				udao.deleteByDownId(downid);
+	                				
+	                				if(courseid != null){
+	                					//mCourseAndDownIdMap.delete(courseid);
+	                					mCourseAndDownIdMap.remove(courseid);
+	                				}
+	   
+	                				View v = mDownIdAndViewMap.get(downid);
+	                				if(v!=null)
+	                					v.setTag(null);
+	                				mDownIdAndViewMap.delete(downid);	                				
+	                			}
+	                		});
+	                		
+	                		if(status == DownloadManager.STATUS_FAILED){
+	                			//删除文件
+	                			String path = Environment.getExternalStoragePublicDirectory(DOWNLOAD_FOLDER_NAME).getAbsolutePath()+"/";
+	                			File f = new File(path+courseid);
+	                			//如果文件存在
+	                			if(f.exists()){	
+	                				f.delete();
+	                			}
+	                		}
+	                		
 	                    } else {
 	                    	
 	                    }
@@ -633,21 +805,20 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	private void cfgImgLoader(){
 		mLoader = ImageLoader.getInstance();
 		File cacheDir = new File(mCacheRoot+"/pics/");	// ;
-		
 		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this)
 		        .memoryCacheExtraOptions(112, 130) // default = device screen dimensions
 		        .diskCacheExtraOptions(112, 130, null)
-		        .threadPoolSize(3) // default
+		        .threadPoolSize(3) // default 3
 		        .threadPriority(Thread.NORM_PRIORITY - 2) // default
 		        .tasksProcessingOrder(QueueProcessingType.FIFO) // default
 		        .denyCacheImageMultipleSizesInMemory()
-		        .memoryCache(new LruMemoryCache(2 * 1024 * 1024))
-		        .memoryCacheSize(2 * 1024 * 1024)
-		        .memoryCacheSizePercentage(13) // default
+		        //.memoryCache(new LruMemoryCache(2 * 1024 * 1024))
+		        //.memoryCacheSize(2 * 1024 * 1024)
+		        //.memoryCacheSizePercentage(13) // default
 		        .diskCache(new UnlimitedDiskCache(cacheDir)) // default,  设置带时限的文件缓存是不和要求的，如果我获得不了之前文件，哪怕其过期了，我也删除不了
 		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
 		        .diskCacheFileCount(10000)			//10000 pics    
-		        .writeDebugLogs()				// Log.d()
+		        //.writeDebugLogs()				// Log.d()
 		        .defaultDisplayImageOptions(new Builder()
 		        								.cacheOnDisc(true)
 		        								.cacheOnDisk(true)

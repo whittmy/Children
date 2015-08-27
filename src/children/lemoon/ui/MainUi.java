@@ -6,7 +6,7 @@ import java.util.LinkedList;
 
 import plugs.parser.Parser;
 
-import logger.lemoon.Logger;
+
  
 
 import children.lemoon.R;
@@ -22,6 +22,7 @@ import children.lemoon.reqbased.entry.ControlcurrentThread;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.utils.HttpManger;
 import children.lemoon.reqbased.utils.TimeUtil;
+import children.lemoon.utils.Logger;
 import children.lemoon.utils.NetworkUtils;
 
 import android.app.Activity;

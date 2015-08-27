@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
      <!-- 标题 -->
- 	<LinearLayout 
+ 	<RelativeLayout 
  	    android:id="@+id/header_container"
  	    android:layout_width="fill_parent"
  	    android:layout_height="30dp"
@@ -17,6 +17,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
             android:paddingLeft="10dp" >
 
             <ImageView
@@ -36,13 +38,15 @@
 	 	        android:layout_gravity="left"/>
         </LinearLayout>	 
 
- 	    <ImageView
- 	        android:id="@+id/battery"
- 	        android:layout_width="wrap_content"
- 	        android:layout_height="wrap_content"
- 	        android:layout_gravity="right"
- 	        />
- 	</LinearLayout> 
+ 
+        <children.lemoon.ui.view.BatteryImgView 
+          	android:id="@+id/battery"
+        	android:layout_width="55dp"
+        	android:layout_height="15dp"  
+        	android:layout_centerVertical="true"
+        	android:layout_alignParentRight="true"
+        	android:layout_marginRight="10dp"/>
+ 	</RelativeLayout> 
  	
  	
  	<ImageView 

@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import children.lemoon.reqbased.db.DownloadItem;
+import children.lemoon.utils.Logger;
 
 import com.j256.ormlite.android.apptools.OrmLiteSqliteOpenHelper;
 import com.j256.ormlite.dao.Dao;
@@ -13,7 +14,7 @@ import com.j256.ormlite.table.TableUtils;
 import java.io.PrintStream;
 import java.sql.SQLException;
 
-import logger.lemoon.Logger;
+
 
 public class DownloadDbHelper extends OrmLiteSqliteOpenHelper {
 	private static final String DATABASE_NAME = "download2.db";

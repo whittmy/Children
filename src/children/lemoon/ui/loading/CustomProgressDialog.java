@@ -25,6 +25,8 @@ import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -77,10 +79,14 @@ public class CustomProgressDialog extends Dialog {
 	private void init(){
 		setContentView(R.layout.customprogressdialog);
 		getWindow().getAttributes().gravity = Gravity.CENTER;
+		
+		//2015.8.12 解决loading独占焦点，导致底下activity无法响应事件的问题。
+		// 关键在于让dialog无法响应焦点便可，如下：
+		getWindow().getAttributes().flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+		getWindow().getAttributes().flags |=  WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE ;
+		
 		tvMsg = (TextView)findViewById(R.id.id_tv_loadingmsg);
-		
-		
-		
+
 		mPath = context.getCacheDir()+"/loadings/";
 		File f = new File(mPath);
 		if(!f.exists()){
@@ -141,13 +147,15 @@ public class CustomProgressDialog extends Dialog {
 		frameAnim =new AnimationDrawable();
 		// 为AnimationDrawable添加动画帧
 		for(Drawable d2 :imgs){
-			frameAnim.addFrame(d2, 100);
+			frameAnim.addFrame(d2, 150);
 		}
 		frameAnim.setOneShot(false);
 		
 
 		 // 设置ImageView的背景为AnimationDrawable
 		findViewById(R.id.loadingImageView).setBackgroundDrawable(frameAnim);
+		
+		frameAnim.start();
 		
 	}
 	
@@ -195,6 +203,35 @@ public class CustomProgressDialog extends Dialog {
     	if (tvMsg != null){
     		tvMsg.setText(strMessage);
     	}
-    	
     }
+    
+    public void setCurPackage(String packname){
+    	mCurPack = packname;
+    }
+    public void setCurStatus(String status){
+    	mCurStatus = status;
+    }
+    
+    private String mCurPack = "", mCurStatus="";
+    public static String ACTION = "loading.CustomProgressDialog";
+    
+    
+    //该加载框与其所属的Activity就是不相干的关系，加载中取消如何实现？
+    //如下
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+    	// TODO Auto-generated method stub
+    	if(event.getAction() == KeyEvent.ACTION_DOWN){
+    		if(event.getKeyCode() == KeyEvent.KEYCODE_BACK){
+    			Intent intent = new Intent();
+    			intent.setAction(ACTION);
+    			intent.putExtra("curPackage", mCurPack);
+    			intent.putExtra("curStatus", mCurStatus);
+    			context.sendBroadcast(intent);
+    			return super.dispatchKeyEvent(event);
+    		}
+    	}
+    	return super.dispatchKeyEvent(event);
+    }
+ 
 }

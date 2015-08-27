@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.LinkedList;
 
@@ -27,8 +28,9 @@ import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
 import com.nostra13.universalimageloader.utils.StorageUtils;
 
-import logger.lemoon.Logger;
 
+
+import children.lemoon.Configer;
 import children.lemoon.R;
 import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.ui.loading.CustomProgressDialog;
@@ -75,9 +77,12 @@ public class MoviesGridAdapter extends BaseAdapter {
 		hold = (Holder) v.getTag();
 		PlayItemEntity pie = (PlayItemEntity) this.data.get(paramInt);
 		hold.title.setText(pie.getName());
-		mLoader.displayImage(pie.getPic(), hold.icon);
 		
-		Log.e("", "pos:"+paramInt+", mod="+paramInt%3);
+ 
+		//mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
+ 
+		
+		//Log.e("", "pos:"+paramInt+", mod="+paramInt%3);
 		hold.bg.setBackgroundResource(mBGs[paramInt%3]);
 
 		return v;

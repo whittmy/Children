@@ -168,7 +168,17 @@ public class PlayerService extends BaseReqService {
 		unregisterReceiver(myReceiver);
 	}
 	
- 
+	private void doComplete(){
+		Configer.sendNotice(PlayerService.this, Configer.Action.ACT_CUR_FINISHED, null);
+
+		//先清除 当前播放时间的反复刷新机制。
+		mHandler.removeMessages(1);
+		
+		//doNext();  //这个不翻页，所以要改成下面的
+		if(!mbUserStop){
+			next();
+		}
+	}
 	
 	AudioManager mAudioManager;
 	//RemoteControlClient mRemoteControlClient;
@@ -186,15 +196,7 @@ public class PlayerService extends BaseReqService {
 			@Override
 			public void onCompletion(MediaPlayer mp) {
 				Log.e(TAG, "Service MediaPlayer onCompletion!");
-				Configer.sendNotice(PlayerService.this, Configer.Action.ACT_CUR_FINISHED, null);
-
-				//先清除 当前播放时间的反复刷新机制。
-				mHandler.removeMessages(1);
-				
-				//doNext();  //这个不翻页，所以要改成下面的
-				if(!mbUserStop){
-					next();
-				}
+				doComplete();
 			}
 		});
 		
@@ -361,6 +363,7 @@ public class PlayerService extends BaseReqService {
 				return true;
 			return false;
 		}
+		
 	}
 	
 	
@@ -484,6 +487,7 @@ public class PlayerService extends BaseReqService {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			doComplete();
 		}
 	}
  
@@ -526,10 +530,20 @@ public class PlayerService extends BaseReqService {
 	private void resume() {
 		Log.e(TAG, "Service resume, mCurrent="+mCurrent);
 		if (!isPlaying && mediaPlayer!=null) {
-			mediaPlayer.start();
-			isPlaying = true;
-			mHandler.sendEmptyMessage(1);
-			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);
+			if(mbUserStop){
+				//had stopped
+				if(mCurrent < mData.size() && mCurrent>=0){
+					path = mData.get(mCurrent).getDownUrl();
+					play(0);
+				}
+				
+			}
+			else{
+				mediaPlayer.start();
+				isPlaying = true;
+				mHandler.sendEmptyMessage(1);
+				Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);				
+			}
 		}
 	}
 
@@ -779,6 +793,11 @@ public class PlayerService extends BaseReqService {
 	
 	private boolean queryPlayList(int pgIdx/* , int pgSize */) {
 		if(mRunMode == Configer.RunMode.MODE_NETWORK){
+			if(pgIdx > mTotalPage){
+				//最后页了。
+				return true;
+			}
+			
 			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_SHOW_LOADING, null);
 			
 			Log.e(TAG, "Service queryPlayList pgIdx="+pgIdx);

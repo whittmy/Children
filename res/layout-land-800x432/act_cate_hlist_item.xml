@@ -45,9 +45,9 @@
 	       	android:layout_width="151dp"
 	       	android:layout_height="90dp"
 	       	android:layout_alignParentTop="true"
-	       	android:layout_marginTop="27dp"
+	       	android:layout_marginTop="20dp"
 	       	android:layout_alignParentLeft="true"
-		   	android:layout_marginLeft="62dp"   
+		   	android:layout_marginLeft="60dp"   
 	       	android:focusable="true"
 	       	android:padding="0dp" >
 	
@@ -55,7 +55,8 @@
 		        android:id="@+id/iv_icon"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
-				android:padding="0dp"
+				android:padding="1dp"
+				android:background="@drawable/bg_border"
 				android:scaleType="fitXY"
 		        android:focusable="false"/>  
 		   <ProgressBar 
@@ -71,21 +72,29 @@
 		         />      
 	    </FrameLayout>
 	
-	
+	<!--
+		android:singleLine="true" 好像个别item的居中有问题。
+		改为下面可以完全解决：
+	        android:gravity="center_horizontal|bottom"
+	        android:maxLines="1"
+		
+		但是修改后文字如果过长，不会有省略号,需要在代码里去判断、处理、设置
+	  -->
 	    <TextView
 	        android:id="@+id/tv_title"
 	        android:layout_width="173dp"
 	        android:layout_height="wrap_content"
 	
 	        android:layout_alignParentLeft="true"
-	        android:layout_marginLeft="51dp"
+	        android:layout_marginLeft="49dp"
 	        
 	        android:layout_alignParentBottom="true"
 	        android:layout_marginBottom="0dp"
 	        android:textSize="20sp"
-	        android:gravity="center|bottom"
-	        android:singleLine="true"
-	        android:textColor="#ffffff"  />
+	        android:gravity="center_horizontal|bottom"
+	        
+	        android:maxLines="1"
+	        android:textColor="#ffffff" />
 	
 	</RelativeLayout>    
 </LinearLayout>

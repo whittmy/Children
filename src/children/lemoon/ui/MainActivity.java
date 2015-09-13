@@ -94,7 +94,7 @@ public class MainActivity extends Activity{
 //			}
 //		}).start();
 		
-		
+		battery.drawByScale(100);
 		
 	}
 

@@ -43,6 +43,9 @@ public class MoviesGridAdapter extends BaseAdapter {
  
 	ImageLoader mLoader;
 	private int[] mBGs = new int[]{R.drawable.grid_item_bg1, R.drawable.grid_item_bg2, R.drawable.grid_item_bg3};
+	
+	
+	
 	public MoviesGridAdapter(Activity paramActivity, LinkedList<PlayItemEntity> paramLinkedList, ImageLoader loader) {
 		this.context = paramActivity;
 		this.data = paramLinkedList;
@@ -79,7 +82,7 @@ public class MoviesGridAdapter extends BaseAdapter {
 		hold.title.setText(pie.getName());
 		
  
-		//mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
+		mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
  
 		
 		//Log.e("", "pos:"+paramInt+", mod="+paramInt%3);

@@ -81,7 +81,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
+public class Player extends BaseReqActivity  {
 	private MySurfaceView mSurfaceView;
 	//private SurfaceHolder mHolder;
 	private MediaPlayer mPlayer = null;
@@ -161,23 +161,12 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	String mCurCateId;
 	int mReqType = 4;
 
-	SharedPreferences mPref;
-	final String SP_CUR_PAGE = "page"; 
+ 	final String SP_CUR_PAGE = "page"; 
 	final String SP_CUR_CLICKID = "clickid"; 	
  
 	
-	private void saveState(final List<PlayItemEntity> data){
- 
-	}
-	
-	private void recoverState(){
-//		if(mRunMode == Configer.RunMode.MODE_LOCAL){
-//			queryPlayList(mCurPg+1);
-//			return;
-//		}
-
-		queryPlayList(mCurPg+1);
-	}
+	private void saveState(final List<PlayItemEntity> data){ }
+	private void recoverState(){ queryPlayList(mCurPg+1); }
 	
 	private void pauseBgMusic(){
 	    long eventtime = SystemClock.uptimeMillis(); 
@@ -244,110 +233,32 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
-
 		//禁止锁屏
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); 
 		
-		mContext = this;
 		this.getWindowManager().getDefaultDisplay().getMetrics(mDm);
 		setContentView(R.layout.mv_player);
-		
+		mContext = this;
+
+		//停止音乐
 		pauseBgMusic();
-		
-		batteryReceiver = new BatteryRcvBindView((BatteryImgView)findViewById(R.id.battery));
-		
-		mLoading = CustomProgressDialog.createDialog(this);
-		//mLoading.setCancelable(false);
-		if(!mLoading.isShowing())
-			mLoading.show();
-		
-		
+ 
 //		DatabaseManager.initializeInstance(this);
-		mPref = getSharedPreferences("sv", 0);
-		
-		findViewById(R.id.go_back).setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				onExitProc();
-			}
-		});
-		
-		//集组显示
-		mSetsHList = (HorizontalListView) findViewById(R.id.id_sethlist);
-		mSetsAdapter = new SetsHListAdapter(this);
-		mSetsHList.setAdapter(mSetsAdapter);
-		
-		mSetsHList.setOnItemClickListener(new OnItemClickListener() {
-			@Override
-			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-				// TODO Auto-generated method stub
-				setCurSetGrpIdx(arg2);				
-			}
-		});
-
-		
-		mHListView = (HorizontalListView) findViewById(R.id.id_horizontalScrollView);
-		mAdapter = new HorizontalScrollViewAdapter(this, mData);
-		mHListView.setAdapter(mAdapter);
-		
-		mHListView.setOnItemClickListener(new OnItemClickListener() {
-			@Override
-			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-				// TODO Auto-generated method stub
-				Log.e("", "=================== onitemclick :"+ arg2);
-				mPref.edit().putInt(SP_CUR_CLICKID+"_"+mCurCateId, arg2).commit();
-				((HorizontalScrollViewAdapter)arg0.getAdapter()).notifyDataSetChanged();
-				myPlay(arg2);
-			}
-		});
  
- 
-		mHListView.setOnScrollListener(new OnScrollListener() {
-			@Override
-			public void onScrollStateChanged(View view, int scrollState) {
-				// TODO Auto-generated method stub
-			}
-			
-			//这里两个工作：1. 数据预请求；2.集组焦点的切换。
-			@Override
-			public void onScroll(View view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-				// TODO Auto-generated method stub
-				Log.e("", "onScroll: "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
-
-				//对于请求的数据要先判断是否已经请求过了。
-				if(firstVisibleItem+visibleItemCount+12 >= totalItemCount //注意next函数，尽可能一致
-					&& 	mData.size()>visibleItemCount){ //数据至少要满屏	
-					//另外注意，这里的mCurPg，只有当请求成功，它的值才会变更。
-					queryPlayList(mCurPg+1);
-					return;
-				}
-				
-				
-				//1. totalItemCount >0
-				//2. firstVisibleItem: idx for the first item of data
-				//3. visibleItemCount 
-				if(totalItemCount > 0){
-					float end = firstVisibleItem+visibleItemCount;
-					int setgrpidx = (int) (Math.ceil(end/PAGE_SIZE)-1);
-					if(setgrpidx >= 0 && setgrpidx!=mSetsHList.getSelectPosition()){
-						Log.e("", "############ Alter setgroup :"+setgrpidx);
-						mCurSetsGrpIdx = setgrpidx;
-						mSetsHList.setSelection(setgrpidx);
-					}
-				}
-			}
-		});
-
-		registerMyRcv();
-		initSurfaceView();
 		initMyView();
+
 		initPlayer();
 		startProgressUpdate();
  
 		
 		mPlayPath = getIntent().getStringExtra("video_path");
-
+		if(mPlayPath!=null && !mPlayPath.isEmpty()){
+			mRunMode = Configer.RunMode.MODE_DIRECT;
+			mMvTitle.setText(mPlayPath); 
+			myPlay(mPlayPath);
+			return;
+		}
+		
 		//--------- 识别 运行模式： 本地 or 网络 , 分类标识 ---------------
 		mCurCateId = getIntent().getStringExtra("cataId");
 		mReqType = getIntent().getIntExtra("type", 4);
@@ -388,7 +299,7 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		// TODO Auto-generated method stub
 		super.onStop();
 		Log.e("", "onstop");
-		unregisterReceiver(batteryReceiver);
+		
 		onExitProc();
 	}
 	
@@ -398,7 +309,10 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		// TODO Auto-generated method stub
 		super.onResume();
 		Logger.LOGD(TAG, "-=-=-=-onResume-=-=-=-=");
-		registerReceiver(batteryReceiver, new IntentFilter("android.intent.action.BATTERY_CHANGED")); 
+		
+		registerMyRcv();
+
+		
 	}
  
 	//------------        seekbar  control --------------
@@ -472,6 +386,85 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	
 	//--------------------------------------------------
 	void initMyView() {
+ 		//退出事件
+		findViewById(R.id.go_back).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				onExitProc();
+			}
+		}); 
+		
+		mLoading = CustomProgressDialog.createDialog(this);
+		mLoading.show();	
+		
+		//集组显示
+		mSetsHList = (HorizontalListView) findViewById(R.id.id_sethlist);
+		mSetsAdapter = new SetsHListAdapter(this);
+		mSetsHList.setAdapter(mSetsAdapter);
+		
+		mSetsHList.setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+				// TODO Auto-generated method stub
+				setCurSetGrpIdx(arg2);				
+			}
+		});
+
+		
+		mHListView = (HorizontalListView) findViewById(R.id.id_horizontalScrollView);
+		mAdapter = new HorizontalScrollViewAdapter(this, mData);
+		mHListView.setAdapter(mAdapter);
+		
+		mHListView.setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+				// TODO Auto-generated method stub
+				Log.e("", "=================== onitemclick :"+ arg2);
+ 				((HorizontalScrollViewAdapter)arg0.getAdapter()).notifyDataSetChanged();
+				myPlay(arg2);
+			}
+		});
+ 
+ 
+		mHListView.setOnScrollListener(new OnScrollListener() {
+			@Override
+			public void onScrollStateChanged(View view, int scrollState) {
+				// TODO Auto-generated method stub
+			}
+			
+			//这里两个工作：1. 数据预请求；2.集组焦点的切换。
+			@Override
+			public void onScroll(View view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+				// TODO Auto-generated method stub
+				Log.e("", "onScroll: "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
+
+				//对于请求的数据要先判断是否已经请求过了。
+				if(firstVisibleItem+visibleItemCount+12 >= totalItemCount //注意next函数，尽可能一致
+					&& 	mData.size()>visibleItemCount && mData.size()>=PAGE_SIZE){ //数据至少要满屏	
+					//另外注意，这里的mCurPg，只有当请求成功，它的值才会变更。
+					queryPlayList(mCurPg+1);
+					return;
+				}
+				
+				
+				//1. totalItemCount >0
+				//2. firstVisibleItem: idx for the first item of data
+				//3. visibleItemCount 
+				if(totalItemCount > 0){
+					float end = firstVisibleItem+visibleItemCount;
+					int setgrpidx = (int) (Math.ceil(end/PAGE_SIZE)-1);
+					if(setgrpidx >= 0 && setgrpidx!=mSetsHList.getSelectPosition()){
+						Log.e("", "############ Alter setgroup :"+setgrpidx);
+						mCurSetsGrpIdx = setgrpidx;
+						mSetsHList.setSelection(setgrpidx);
+					}
+				}
+			}
+		});
+		
+		initSurfaceView();
+		
 		mImgPauseFlag = (ImageView)findViewById(R.id.img_pause);
 		
 		mBtnPlay = (Button)findViewById(R.id.btn_play);
@@ -674,14 +667,14 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	
 	
 	private void onExitProc(){
-		if (mPlayer != null) {
-			mPlayer.release();
-			mPlayer = null;
-		}
+//		if (mPlayer != null) {
+//			mPlayer.release();
+//			mPlayer = null;
+//		}
 
 		releasePlayer();
+
 		unregisterMyRcv();
-		finish();
 		System.exit(0);
 	}
 
@@ -990,6 +983,11 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		@Override
 		public boolean onError(MediaPlayer player, int whatError, int extra) {
 			Logger.LOGD(TAG, "onError called: " + (System.currentTimeMillis() - mKeyEvent_tm));
+			if(mRunMode == Configer.RunMode.MODE_DIRECT && whatError!=-38){
+				onExitProc();
+				return true;
+			}
+			
 			switch (whatError) {
 			case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
 				// initPlayer();
@@ -1006,7 +1004,12 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		public void onCompletion(MediaPlayer player) {
 			Logger.LOGD("Play Over:::", "onComletion called");
 			//myPlay(mPlayPath);
-			next(true);
+			if(mRunMode != Configer.RunMode.MODE_DIRECT){
+				next(true);
+			}
+			else{
+				onExitProc();
+			}
 		}
 	};
 	MediaPlayer.OnPreparedListener mPrepareListener = new MediaPlayer.OnPreparedListener() {
@@ -1014,8 +1017,10 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 		public void onPrepared(MediaPlayer mPlayer) {
 			Logger.LOGD(TAG, "onPrepared called");
 			
-			int pos = mHListView.getClickPos()==-1?0:mHListView.getClickPos();
-			mMvTitle.setText(mData.get(pos).getName());
+			if(mRunMode != Configer.RunMode.MODE_DIRECT){
+				int pos = mHListView.getClickPos()==-1?0:mHListView.getClickPos();
+				mMvTitle.setText(mData.get(pos).getName());
+			}
 			mDuration = mPlayer.getDuration();
 			if(mDuration == 0)
 				mDuration = 1200;
@@ -1096,44 +1101,31 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	}
 	//--------------------------------------------------------------
 
-	
-	
-	
-	
-	
-	
-	
+
 	// ------------------ surface relative-------------------
 	void initSurfaceView() {
 		mSurfaceView = (MySurfaceView) this.findViewById(R.id.surface_view);
-		//mHolder = mSurfaceView.getHolder();
-		//mHolder.addCallback(this);
-		mSurfaceView.getHolder().addCallback(this);
-	}
-	
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-		Logger.LOGD(TAG, "Surface Change:::");
-	}
+		mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback(){
+			@Override
+			public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+				Logger.LOGD(TAG, "Surface Change:::");
+			}
 
-	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-		Logger.LOGD(TAG, "surfaceCreated");
-		mSurfaceView.setY(0);
-		//mHolder.setFixedSize(mDm.widthPixels, mDm.heightPixels);
-		mSurfaceView.getHolder().setFixedSize(mDm.widthPixels, mDm.heightPixels);
-		mSurfaceView.mIsFullScreen = false;
-		if (mPlayer != null)
-			mPlayer.setDisplay(/*mHolder*/mSurfaceView.getHolder());
-
-		//initPlayer();
-	}
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		Logger.LOGD("Surface Destory:::", "surfaceDestroyed called");
-		//mHolder = null;
-		//releasePlayer();
-
+			@Override
+			public void surfaceCreated(SurfaceHolder holder) {
+				Logger.LOGD(TAG, "surfaceCreated");
+				mSurfaceView.setY(0);
+				//mHolder.setFixedSize(mDm.widthPixels, mDm.heightPixels);
+				mSurfaceView.getHolder().setFixedSize(mDm.widthPixels, mDm.heightPixels);
+				mSurfaceView.mIsFullScreen = false;
+				if (mPlayer != null)
+					mPlayer.setDisplay(/*mHolder*/mSurfaceView.getHolder());
+			}
+			@Override
+			public void surfaceDestroyed(SurfaceHolder holder) {
+				Logger.LOGD("Surface Destory:::", "surfaceDestroyed called");
+			}
+		});
 	}
 	//------------------------------------------------------------
 	
@@ -1142,6 +1134,12 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	MyReceiver myReceiver;
 	private void registerMyRcv(){
 		Log.e(TAG, "Service registerMyRcv");
+		
+		if(batteryReceiver == null){
+			batteryReceiver = new BatteryRcvBindView((BatteryImgView)findViewById(R.id.battery));
+			registerReceiver(batteryReceiver, new IntentFilter("android.intent.action.BATTERY_CHANGED")); 
+		}
+
 		if(myReceiver == null){
 			myReceiver = new MyReceiver();
 			IntentFilter filter = new IntentFilter();
@@ -1150,6 +1148,9 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 			filter.addAction(Configer.Action.MV_CTL_NEXT);
 			filter.addAction(Configer.Action.MV_CTL_PREV);
 			filter.addAction(Configer.Action.MV_CTL_PLAY_PAUSE);
+			
+			//exit
+			filter.addAction(Configer.Action.ACT_EXIT);
 			
 			//锁(关)屏状态
 		     filter.addAction(Intent.ACTION_SCREEN_ON);  
@@ -1160,8 +1161,14 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
 	}
 	
 	private void unregisterMyRcv(){
-		if(myReceiver != null)
+		if(myReceiver != null){
 			unregisterReceiver(myReceiver);
+			myReceiver = null;
+		}
+		if(batteryReceiver != null){
+			unregisterReceiver(batteryReceiver);
+			batteryReceiver = null;
+		}
 	}
 	
 	public class MyReceiver extends BroadcastReceiver {
@@ -1188,7 +1195,10 @@ public class Player extends BaseReqActivity implements SurfaceHolder.Callback {
             }else if(Intent.ACTION_SCREEN_OFF.equals(action)){  
                 //mScreenStateListener.onScreenOff();
             	onExitProc();
-            }  
+            } 
+            else if(action.equals(Configer.Action.ACT_EXIT)){
+            	onExitProc();
+            }
 		}
 	}
 	//-----------------------------------------------------------------

@@ -3,6 +3,7 @@ package children.lemoon.reqbased.utils;
 //ok
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -252,7 +253,7 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
   		 localHashMap.put("reqtime", timeStamp);
 		 localHashMap.put("sign", MyUtil.getSign(Long.valueOf(timeStamp)));
 		 localHashMap.put("mac", DeviceUtil.getMacAddress());
- 
+		 localHashMap.put("firmware", Build.VERSION.RELEASE);
 		return localHashMap;
 	}
 }

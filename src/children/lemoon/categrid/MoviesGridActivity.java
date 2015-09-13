@@ -183,6 +183,12 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		super.onResume();
 		getContentResolver().registerContentObserver(  DownloadManagerPro.CONTENT_URI, true, downloadObserver);
 
+		
+		//发广播，关闭视频播放
+		sendBroadcast(new Intent(Configer.Action.ACT_EXIT));
+		
+		
+		
         /** register download success broadcast **/
         registerReceiver(completeReceiver, new IntentFilter( DownloadManager.ACTION_DOWNLOAD_COMPLETE));
         

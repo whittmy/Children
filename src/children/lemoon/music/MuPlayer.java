@@ -25,6 +25,7 @@ import android.os.CountDownTimer;
 import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.animation.Animation;
@@ -88,7 +89,7 @@ public class MuPlayer extends Activity {
 	SeekBarChangeListener mSeekBarListener = new SeekBarChangeListener();
 
 	CustomProgressDialog mLoading;
-
+	ExitDialog mExitDlg;
 	void initView() {
 		
 		mBatteryView = (BatteryImgView)findViewById(R.id.battery);
@@ -112,7 +113,9 @@ public class MuPlayer extends Activity {
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				finish();
+    			mExitDlg.show();
+
+				//finish();
 			}
 		});
 		
@@ -379,12 +382,36 @@ public class MuPlayer extends Activity {
 		
 		if(mLoading == null)
 			mLoading = CustomProgressDialog.createDialog(this);
-		
-		
+		if(mExitDlg == null){
+			mExitDlg = ExitDialog.createDialog(this);
+			mExitDlg.setMyOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					switch(v.getId()){
+					case R.id.btn_close_music:
+						Log.e("", "============ ok");
+						Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, new String[]{"MSG", String.format("%d", Configer.PlayerMsg.STOP_MSG)});	
+						mExitDlg.dismiss();
+						MuPlayer.this.finish();
+						return;
+
+					case R.id.btn_bg_music:
+						Log.e("", "=========== cancel");
+						mExitDlg.dismiss();
+						MuPlayer.this.finish();
+						return;
+					}
+				}
+			});
+		}
 		bindMySvr();
 		
 		
 		registerMyReceiver();
+		
+		
+		Configer.sendNotice(this, Configer.Action.ACT_MUPLAYER_LAUCHED, null);
 	}
 
 	@Override
@@ -400,13 +427,27 @@ public class MuPlayer extends Activity {
 			mLoading = null;
 		}
 		
-		
+		if(mExitDlg != null){
+			mExitDlg.dismiss();
+			mExitDlg = null;
+		}
+
 		unregisterMyRcver();
 		
 		unbindMySvr();
 	}
 	
-	
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+    	// TODO Auto-generated method stub
+    	if(event.getAction() == KeyEvent.ACTION_DOWN){
+    		if(event.getKeyCode() == KeyEvent.KEYCODE_BACK){
+    			mExitDlg.show();
+    			return super.dispatchKeyEvent(event);
+    		}
+    	}
+    	return super.dispatchKeyEvent(event);
+    }
 	
 	private void updateProgess(){
 		int currentTime = mIService.getCurTm();

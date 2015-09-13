@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"  >
+ 
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:layout_alignParentTop="true"
+		android:layout_marginTop="0dp"
+		android:layout_centerHorizontal="true"
+
+        android:text="准备退出音乐?" 
+        android:textSize="24sp"/>
+        
+    <Button
+        
+        android:id="@+id/btn_close_music"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+       	android:layout_centerHorizontal="true"
+       	android:layout_below="@+id/title"
+        android:text="终止播放" 
+        android:textSize="22sp"/>
+
+    <Button
+        android:id="@+id/btn_bg_music"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/btn_close_music"
+        android:layout_centerHorizontal="true"
+        android:text="后台播放" 
+        android:textSize="22sp"/>
+ 
+</RelativeLayout>

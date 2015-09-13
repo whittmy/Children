@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 
 public class Configer {
-	public static  String OEM_NAME = "piapia"; 
+	public static  String OEM_NAME = "piapia_v2"; 
 	public static boolean _DEBUG = true;
 	public static String COM_KEY = "@#xpia&*1452";
 	public static String IMG_URL_PRE = "http://www.nybgjd.com/misc/story_res/images/";
@@ -20,14 +20,14 @@ public class Configer {
 		private static final int default_icon_for_player2 = R.drawable.mv_bg_default;
 		
 		public static int get_icon_for_categrid(){
-			if(OEM_NAME.equals("piapia")){
+			if(OEM_NAME.contains("piapia")){
 				return default_icon_for_categrid1;
 			}
 			return default_icon_for_categrid2;
 		}
 		
 		public static int get_icon_for_player(){
-			if(OEM_NAME.equals("piapia")){
+			if(OEM_NAME.contains("piapia")){
 				return default_icon_for_player1;
 			}
 			return default_icon_for_player2;
@@ -37,7 +37,7 @@ public class Configer {
 		
 		public static Drawable[] getLoading(Context context){
 			Drawable[] imgs;
-			if(OEM_NAME.equals("piapia")){
+			if(OEM_NAME.contains("piapia")){
  
 				imgs = new Drawable[7];
 				imgs[0 ] = context.getResources().getDrawable(R.drawable.mloading1 );
@@ -144,7 +144,7 @@ public class Configer {
 		public static final String ACT_NEW_CATE_DATA = "lemoon.action.ACT_NEW_CATE_DATA";
 		public static final String ACT_SHOW_LOADING = "lemoon.action.ACT_SHOW_LOADING";
 		public static final String ACT_HIDE_LOADING = "lemoon.action.ACT_HIDE_LOADING";
-		
+		public static final String ACT_MUPLAYER_LAUCHED = "lemoon.action.muplayer.lauched";
 
 		//Service
 		public static final String SVR_CTL_ACTION = "lemoon.action.CTL_ACTION";		//控制动作 参数：listPosition, MSG, progress;
@@ -159,6 +159,10 @@ public class Configer {
 		public static final String MV_CTL_PLAY_PAUSE = "lemoon.action.MV_CTL_PLAY_PAUSE";	 	
 		
 
+		//退出
+		public static final String ACT_EXIT = "lemoon.action.exit";
+		
+		
 		//系统的音乐播放器相关Action
 		public static final String SERVICECMD = "com.android.music.musicservicecommand";
 		public static final String CMDNAME = "command";
@@ -178,6 +182,7 @@ public class Configer {
 	public class RunMode{
 		public static final int MODE_NETWORK = 50;	
 		public static final int MODE_LOCAL = 51;	
+		public static final int MODE_DIRECT = 52;
 	}
 	
 	

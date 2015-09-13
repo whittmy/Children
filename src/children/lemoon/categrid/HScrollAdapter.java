@@ -152,8 +152,12 @@ public class HScrollAdapter extends BaseAdapter {
 		}
  
 		hold = (Holder) v.getTag();
-		hold.title.setText(pie.getName());
-		//mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
+		
+		String name = pie.getName();
+		//Log.e("", "len="+name.length());
+		hold.title.setText(name.length()>7? name.substring(0, 6)+"..":name);
+		//Log.e("", pie.getName());
+		mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
 
 		hold.bg.setBackgroundResource(mBGs[paramInt%3]);
 		

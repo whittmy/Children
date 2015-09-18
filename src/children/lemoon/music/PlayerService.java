@@ -106,38 +106,40 @@ public class PlayerService extends BaseReqService {
 			switch(msg.what){
 			case 1:
 				if(mediaPlayer != null && mediaPlayer.isPlaying()) {
+					Logger.LOGD("", "msg 1");
 					currentTime = (int)mediaPlayer.getCurrentPosition(); // 获取当前音乐播放的位置
 					Configer.sendNotice(PlayerService.this, Configer.Action.ACT_MUSIC_CURRENT, null);
-					mHandler.sendEmptyMessageDelayed(1, 1000);
+					if(isPlaying)
+						mHandler.sendEmptyMessageDelayed(1, 1000);
 				}
 				break;
 			case Configer.PlayerMsg.PLAY_MSG: //直接播放音乐
-				Log.e(TAG, "Service handleMsg: PLAY_MSG, mCurrent:"+mCurrent);
+				Logger.LOGD(TAG, "Service handleMsg: PLAY_MSG, mCurrent:"+mCurrent);
 				path = mData.get(mCurrent).getDownUrl();
 				play(0);
 				break;
 			case Configer.PlayerMsg.PAUSE_MSG://暂停
-				Log.e(TAG, "Service handleMsg: PAUSE_MSG, mCurrent:"+mCurrent);
+				Logger.LOGD(TAG, "Service handleMsg: PAUSE_MSG, mCurrent:"+mCurrent);
 				pause();
 				break;
 			case Configer.PlayerMsg.STOP_MSG://停止
-				Log.e(TAG, "Service handleMsg: STOP_MSG, mCurrent:"+mCurrent);
+				Logger.LOGD(TAG, "Service handleMsg: STOP_MSG, mCurrent:"+mCurrent);
 				stop();
 				break;
 			case Configer.PlayerMsg.CONTINUE_MSG://继续播放
-				Log.e(TAG, "Service handleMsg: CONTINUE_MSG, mCurrent:"+mCurrent);
+				Logger.LOGD(TAG, "Service handleMsg: CONTINUE_MSG, mCurrent:"+mCurrent);
 				resume();	
 				break;
 			case Configer.PlayerMsg.PRIVIOUS_MSG:	//上一首
-				Log.e(TAG, "Service handleMsg: PRIVIOUS_MSG, mCurrent:"+mCurrent);
+				Logger.LOGD(TAG, "Service handleMsg: PRIVIOUS_MSG, mCurrent:"+mCurrent);
 				previous();
 				break;
 			case Configer.PlayerMsg.NEXT_MSG://下一首
-				Log.e(TAG, "Service handleMsg: NEXT_MSG, mCurrent:"+mCurrent);
+				Logger.LOGD(TAG, "Service handleMsg: NEXT_MSG, mCurrent:"+mCurrent);
 				next();
 				break;
 			case Configer.PlayerMsg.PROGRESS_CHANGE://进度更新
-				Log.e(TAG, "Service handleMsg: PROGRESS_CHANGE, mCurrent:"+mCurrent);
+				Logger.LOGD(TAG, "Service handleMsg: PROGRESS_CHANGE, mCurrent:"+mCurrent);
 				currentTime = msg.arg1;
 				play(currentTime);
 				break;	
@@ -154,7 +156,7 @@ public class PlayerService extends BaseReqService {
 	};
  
 	private void registerMyRcv(){
-		Log.e(TAG, "Service registerMyRcv");
+		Logger.LOGD(TAG, "Service registerMyRcv");
 		myReceiver = new MyReceiver();
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(Configer.Action.SVR_CTL_ACTION);
@@ -164,7 +166,7 @@ public class PlayerService extends BaseReqService {
 	}
 	
 	private void unregisterMyRcv(){
-		Log.e(TAG, "Service unregisterMyRcv");
+		Logger.LOGD(TAG, "Service unregisterMyRcv");
 		unregisterReceiver(myReceiver);
 	}
 	
@@ -185,7 +187,7 @@ public class PlayerService extends BaseReqService {
 	 private ComponentName mRemoteControlResponder;
  	public void onCreate() {
 		super.onCreate();
-		Log.e(TAG, "Service onCreate");
+		Logger.LOGD(TAG, "Service onCreate");
 		
 		mediaPlayer = new MediaPlayer();
 		 
@@ -195,7 +197,7 @@ public class PlayerService extends BaseReqService {
 		mediaPlayer.setOnCompletionListener(new OnCompletionListener() {
 			@Override
 			public void onCompletion(MediaPlayer mp) {
-				Log.e(TAG, "Service MediaPlayer onCompletion!");
+				Logger.LOGD(TAG, "Service MediaPlayer onCompletion!");
 				doComplete();
 			}
 		});
@@ -225,7 +227,7 @@ public class PlayerService extends BaseReqService {
 	//这里，我们通过bindService，方便activity获取service数据。
 	@Override
 	public IBinder onBind(Intent arg0) {
-		Log.e(TAG, "Service onBind");
+		Logger.LOGD(TAG, "Service onBind");
 		return myBind;
 	}
 
@@ -243,7 +245,7 @@ public class PlayerService extends BaseReqService {
 			return;
 		}
  
-		Log.e(TAG, "Service onStart, mData.size="+mData.size());
+		Logger.LOGD(TAG, "Service onStart, mData.size="+mData.size());
 
 		String localpath = null;
 		mReqType = intent.getIntExtra("type", 0);
@@ -311,7 +313,7 @@ public class PlayerService extends BaseReqService {
 				localpath += "/";
 			
 			for(String file : l){
-				//Log.e("", localpath+file);
+				//Logger.LOGD("", localpath+file);
 				PlayItemEntity pie = new PlayItemEntity();
 				pie.setName(file);
 				pie.setDownUrl(localpath+file);
@@ -369,7 +371,7 @@ public class PlayerService extends BaseReqService {
 	
 	@Override
 	public void onDestroy() {
-		Log.e(TAG, "Service onDestroy");
+		Logger.LOGD(TAG, "Service onDestroy");
 		if (mediaPlayer != null) {
 			mediaPlayer.stop();
 			mediaPlayer.release();
@@ -385,7 +387,7 @@ public class PlayerService extends BaseReqService {
 	 * 						初始化歌词配置
 	 ***********************************************************************************/
 	public void initLrc(){
-		Log.e(TAG, "Service initLrc");
+		Logger.LOGD(TAG, "Service initLrc");
 		mHandler.removeCallbacks(mRunnable);
 		mLrcProcess = new LrcProcess();
 		//读取歌词文件
@@ -417,7 +419,7 @@ public class PlayerService extends BaseReqService {
 	 * @return
 	 */
 	public int lrcIndex() {
-		Log.e(TAG, "Service lrcIndex");
+		Logger.LOGD(TAG, "Service lrcIndex");
 		if(mediaPlayer.isPlaying()) {
 			currentTime = (int)mediaPlayer.getCurrentPosition();
 			duration = (int)mediaPlayer.getDuration();
@@ -453,7 +455,7 @@ public class PlayerService extends BaseReqService {
 	 * @return
 	 */
 	protected int getRandomIndex(int end) {
-		Log.e(TAG, "Service getRandomIndex");
+		Logger.LOGD(TAG, "Service getRandomIndex");
 		int index = (int) (Math.random() * end);
 		return index;
 	}
@@ -465,7 +467,7 @@ public class PlayerService extends BaseReqService {
 	 * @param position: 播放位置
 	 */
 	private void play(int currentTime) {
-		Log.e(TAG, "Service play arg1:"+currentTime+", mCurrent="+mCurrent+",path="+path);
+		Logger.LOGD(TAG, "Service play arg1:"+currentTime+", mCurrent="+mCurrent+",path="+path);
 		try {
 			if(currentTime>5000 && mediaPlayer!=null && mediaPlayer.getDuration()>0){
 				mediaPlayer.seekTo(currentTime);
@@ -496,11 +498,11 @@ public class PlayerService extends BaseReqService {
 	 * 暂停音乐
 	 */
 	private void pause() {
-		Log.e(TAG, "Service pause, mCurrent="+mCurrent);
+		Logger.LOGD(TAG, "Service pause, mCurrent="+mCurrent);
 		if (mediaPlayer != null && mediaPlayer.isPlaying()) {
 			mediaPlayer.pause();
 			isPlaying = false;
-			mbUserStop = true;
+			//mbUserStop = true;
 			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_ACTION, null);
 		}
 	}
@@ -509,7 +511,7 @@ public class PlayerService extends BaseReqService {
 	 */
 	private boolean mbUserStop = false;
 	private void stop() {
-		Log.e(TAG, "Service stop, mCurrent="+mCurrent);
+		Logger.LOGD(TAG, "Service stop, mCurrent="+mCurrent);
 		if (mediaPlayer != null) {
 			mediaPlayer.stop();
 			//我屏蔽下面了，另外注意stop后，会执行 onComplet回调，会跳转到下一曲，所以要区分认为终止还是自然终止
@@ -528,7 +530,7 @@ public class PlayerService extends BaseReqService {
 
 	
 	private void resume() {
-		Log.e(TAG, "Service resume, mCurrent="+mCurrent);
+		Logger.LOGD(TAG, "Service resume, mCurrent="+mCurrent);
 		if (!isPlaying && mediaPlayer!=null) {
 			if(mbUserStop){
 				//had stopped
@@ -551,7 +553,7 @@ public class PlayerService extends BaseReqService {
 	 * 上一首 不涉及 播放模式
 	 */
 	private void previous() {
-		Log.e(TAG, "Service previous, mCurrent="+mCurrent);
+		Logger.LOGD(TAG, "Service previous, mCurrent="+mCurrent);
 		//rocking
 		mCurrent--;
 		if(mCurrent < 0){
@@ -573,12 +575,12 @@ public class PlayerService extends BaseReqService {
 	 * 下一首  注意要涉及播放模式
 	 */
 	private void next() {
-		Log.e(TAG, "Service next, mCurrent="+mCurrent);
+		Logger.LOGD(TAG, "Service next, mCurrent="+mCurrent);
 		//判断是否要取数据
 		int pg = mCurrent/mpgSize;
 		int idx = mCurrent%mpgSize;
 		if(mRunMode==Configer.RunMode.MODE_NETWORK && pg==(mCurPg-1) && idx >10){
-			Log.e("", "begin to load page:"+(mCurPg+1)+", mCurrent="+mCurrent+", mcurpage="+mCurPg);
+			Logger.LOGD("", "begin to load page:"+(mCurPg+1)+", mCurrent="+mCurrent+", mcurpage="+mCurPg);
 			queryPlayList(mCurPg+1);
 		}
 
@@ -599,7 +601,7 @@ public class PlayerService extends BaseReqService {
 
 	//跳下一曲，考虑 播放模式
 	private void doNext(){
-		Log.e(TAG, "Service doNext, mCurrent="+mCurrent);
+		Logger.LOGD(TAG, "Service doNext, mCurrent="+mCurrent);
 		int rt = mCurrent;
 		
 		switch(mRunMode){
@@ -674,7 +676,7 @@ public class PlayerService extends BaseReqService {
 	private final class PreparedListener implements OnPreparedListener {
 		@Override
 		public void onPrepared(MediaPlayer mp) {
-			Log.e(TAG, "Service onPrepared, mCurrent="+mCurrent);
+			Logger.LOGD(TAG, "Service onPrepared, mCurrent="+mCurrent);
 			mediaPlayer.start(); // 开始播放
 			if (currentTime > 0) { // 如果音乐不是从头播放
 				mediaPlayer.seekTo(currentTime);
@@ -712,38 +714,38 @@ public class PlayerService extends BaseReqService {
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.TOGGLEPAUSE_MSG);
 						break;
 					case Configer.PlayerMsg.PLAY_MSG: //直接播放音乐
-						Log.e(TAG, "Service MyReceiver msg:PLAY_MSG mCurrent="+mCurrent);
+						Logger.LOGD(TAG, "Service MyReceiver msg:PLAY_MSG mCurrent="+mCurrent);
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.PLAY_MSG);
 						break;
 					case Configer.PlayerMsg.PAUSE_MSG://暂停
-						Log.e(TAG, "Service MyReceiver PAUSE_MSG mCurrent="+mCurrent);
+						Logger.LOGD(TAG, "Service MyReceiver PAUSE_MSG mCurrent="+mCurrent);
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.PAUSE_MSG);
 						break;
 					case Configer.PlayerMsg.STOP_MSG://停止
-						Log.e(TAG, "Service MyReceiver STOP_MSG mCurrent="+mCurrent);
+						Logger.LOGD(TAG, "Service MyReceiver STOP_MSG mCurrent="+mCurrent);
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.STOP_MSG);
 						break;
 					case Configer.PlayerMsg.CONTINUE_MSG://继续播放
-						Log.e(TAG, "Service MyReceiver CONTINUE_MSG mCurrent="+mCurrent);
+						Logger.LOGD(TAG, "Service MyReceiver CONTINUE_MSG mCurrent="+mCurrent);
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.CONTINUE_MSG);
 						break;
 					case Configer.PlayerMsg.PRIVIOUS_MSG:	//上一首
-						Log.e(TAG, "Service MyReceiver PRIVIOUS_MSG mCurrent="+mCurrent);
+						Logger.LOGD(TAG, "Service MyReceiver PRIVIOUS_MSG mCurrent="+mCurrent);
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.PRIVIOUS_MSG);
 						break;
 					case Configer.PlayerMsg.NEXT_MSG://下一首
-						Log.e(TAG, "Service MyReceiver NEXT_MSG mCurrent="+mCurrent);
+						Logger.LOGD(TAG, "Service MyReceiver NEXT_MSG mCurrent="+mCurrent);
 						mHandler.sendEmptyMessage(Configer.PlayerMsg.NEXT_MSG);
 						break;
 					case Configer.PlayerMsg.PROGRESS_CHANGE://进度更新
-						Log.e(TAG, "Service MyReceiver PROGRESS_CHANGE mCurrent="+mCurrent+",porgress:"+intent.getStringExtra("progress"));
+						Logger.LOGD(TAG, "Service MyReceiver PROGRESS_CHANGE mCurrent="+mCurrent+",porgress:"+intent.getStringExtra("progress"));
 						Message msg = new Message();
 						msg.what = Configer.PlayerMsg.PROGRESS_CHANGE;
 						msg.arg1 = Integer.valueOf(intent.getStringExtra("progress"));
 						mHandler.sendMessage(msg);
 						break;															
 					case Configer.PlayerMsg.PLAYING_MSG:
-						//Log.e(TAG, "Service MyReceiver PLAYING_MSG mCurrent="+mCurrent);
+						//Logger.LOGD(TAG, "Service MyReceiver PLAYING_MSG mCurrent="+mCurrent);
 						mHandler.sendEmptyMessage(1);
 						break;					
 					}
@@ -773,14 +775,14 @@ public class PlayerService extends BaseReqService {
 			}
 			else if(action.equals(Configer.Action.SVR_SHOW_LRC)){
 				// 3. 歌词
-				Log.e(TAG, "Service MyReceiver SVR_SHOW_LRC mCurrent="+mCurrent);
+				Logger.LOGD(TAG, "Service MyReceiver SVR_SHOW_LRC mCurrent="+mCurrent);
 				//mCurrent = intent.getIntExtra("listPosition", -1);
 				//initLrc();
 				return;
 			}
 			else if(action.equals(Configer.Action.SVR_GET_NEWPG)){
 				//4. 加载新页面
-				Log.e(TAG, "Service MyReceiver SVR_GET_NEWPG mCurrent="+mCurrent);
+				Logger.LOGD(TAG, "Service MyReceiver SVR_GET_NEWPG mCurrent="+mCurrent);
 				//boolean bNext = intent.getBooleanExtra("bnextpg", false);
 				//if(bNext){
 					queryPlayList(mCurPg+1);
@@ -800,7 +802,7 @@ public class PlayerService extends BaseReqService {
 			
 			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_SHOW_LOADING, null);
 			
-			Log.e(TAG, "Service queryPlayList pgIdx="+pgIdx);
+			Logger.LOGD(TAG, "Service queryPlayList pgIdx="+pgIdx);
 			HashMap<String, Object> bodyRequest = new HashMap<String, Object>();
 			bodyRequest.put("id", mCataId);
 			bodyRequest.put("pageindex", pgIdx);
@@ -851,7 +853,7 @@ public class PlayerService extends BaseReqService {
 		mData.addAll(plist.getpList());
 		//mCurPg++;
 		
-		Log.e(TAG, "Service onPostHandle success, curpg:"+mCurPg);
+		Logger.LOGD(TAG, "Service onPostHandle success, curpg:"+mCurPg);
 		
 		if(bNetFirst){
 			mHandler.sendEmptyMessage(Configer.PlayerMsg.PLAY_MSG);

@@ -41,14 +41,14 @@ public class ExitDialog  extends Dialog {
 //			// TODO Auto-generated method stub
 //			switch(arg0.getId()){
 //			case R.id.ok:
-//				Log.e("", "============ ok");
+//				Logger.LOGD("", "============ ok");
 //				Configer.sendNotice(context, Configer.Action.SVR_CTL_ACTION, new String[]{"MSG", String.format("%d", Configer.PlayerMsg.STOP_MSG)});	 
 //				
 //				
 //				break;
 //				
 //			case R.id.cancle:
-//				Log.e("", "============ cancel");
+//				Logger.LOGD("", "============ cancel");
 //				break;
 //			}
 //			

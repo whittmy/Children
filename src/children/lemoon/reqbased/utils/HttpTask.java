@@ -2,6 +2,8 @@ package children.lemoon.reqbased.utils;
 
 //ok
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
@@ -151,7 +153,7 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 				    }
 					
 					if(bok){
-						Log.e("", "#################delt="+(System.currentTimeMillis()-bgtm));
+						Logger.LOGD("", "#################delt="+(System.currentTimeMillis()-bgtm));
 						break;
 					}
 					
@@ -249,11 +251,17 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
  		 int versionCode = DeviceUtil.getVersionCode(context);
  		 String timeStamp = TimeUtil.getTimeStamp();
  		 
+ 		 SharedPreferences sp = context.getSharedPreferences("sys_info", Context.MODE_WORLD_WRITEABLE);  
+ 		 String firmware = sp.getString("ota_ver", "");
+ 		 if(firmware.isEmpty()){
+ 			firmware = sp.getString("firm_ver","");
+ 		 }
+
 		 localHashMap.put("vercode", String.valueOf(versionCode));
   		 localHashMap.put("reqtime", timeStamp);
 		 localHashMap.put("sign", MyUtil.getSign(Long.valueOf(timeStamp)));
 		 localHashMap.put("mac", DeviceUtil.getMacAddress());
-		 localHashMap.put("firmware", Build.VERSION.RELEASE);
+		 localHashMap.put("firmware", firmware);
 		return localHashMap;
 	}
 }

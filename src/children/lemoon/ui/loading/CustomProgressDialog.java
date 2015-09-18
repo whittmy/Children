@@ -75,6 +75,7 @@ public class CustomProgressDialog extends Dialog {
 	    	return lhs.compareTo(rhs);
 	    }
 	}
+ 
 	
 	private void init(){
 		setContentView(R.layout.customprogressdialog);

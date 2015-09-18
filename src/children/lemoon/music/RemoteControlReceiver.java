@@ -1,6 +1,7 @@
 package children.lemoon.music;
 
 import children.lemoon.Configer;
+import children.lemoon.utils.Logger;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -47,7 +48,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String intentAction = intent.getAction();
         cx = context; 
-        Log.e("", "RemoteControlReceiver action="+intentAction);
+        Logger.LOGD("", "RemoteControlReceiver action="+intentAction);
         
         if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intentAction)) {
         	Configer.sendNotice(context, Configer.Action.SVR_CTL_ACTION, new String[]{"MSG", String.format("%d", Configer.PlayerMsg.PAUSE_MSG)});	 
@@ -91,7 +92,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
             }
 
            
-            Log.d("", "keycode="+keycode+", action="+action+", repeatcount="+event.getRepeatCount()+",eventtime-mLastClickTime="+(eventtime-mLastClickTime));
+            Logger.LOGD("", "keycode="+keycode+", action="+action+", repeatcount="+event.getRepeatCount()+",eventtime-mLastClickTime="+(eventtime-mLastClickTime));
             if (command != -1) {
             	mCmd = command;
             	 

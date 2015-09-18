@@ -3,6 +3,8 @@ package children.lemoon.player.org;
 import java.util.HashMap;
 import java.util.Map;
 
+import children.lemoon.utils.Logger;
+
 
 import android.content.Context;
 import android.graphics.Color;
@@ -295,7 +297,7 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 			view.measure(w, h);
 			mChildHeight = view.getMeasuredHeight();
 			mChildWidth = view.getMeasuredWidth();
-			Log.e(TAG, view.getMeasuredWidth() + "," + view.getMeasuredHeight());
+			Logger.LOGD(TAG, view.getMeasuredWidth() + "," + view.getMeasuredHeight());
 			mChildHeight = view.getMeasuredHeight();
 			// 计算每次加载多少个View
 			mCountOneScreen = (mScreenWitdh / mChildWidth == 0)?mScreenWitdh / mChildWidth+1:mScreenWitdh / mChildWidth+2;
@@ -307,7 +309,7 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 			mCountOneScreen=mAdapter.getCount();
 		}
 		
-		Log.e(TAG, "mCountOneScreen = " + mCountOneScreen
+		Logger.LOGD(TAG, "mCountOneScreen = " + mCountOneScreen
 				+ " ,mChildWidth = " + mChildWidth);
 		
 		
@@ -367,7 +369,7 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 		Integer oldClickPos = mViewPos.get(oldClickView);
 		if(oldClickPos != null){
 			int c_idx = oldClickPos - mFristIndex;
-			Log.e("", String.format("===========handle_old:  oldpos=%d, oldridx=%d", oldClickPos, c_idx));
+			Logger.LOGD("", String.format("===========handle_old:  oldpos=%d, oldridx=%d", oldClickPos, c_idx));
 			mViewPos.remove(/*mContainer.getChildAt(c_idx)*/oldClickView);
 			mContainer.removeViewAt(c_idx);
 			//获取下一张图片，并且设置onclick事件，且加入容器中
@@ -379,7 +381,7 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 		
 		//handle new
 		int c_idx = newClickpos-mFristIndex;
-		Log.e("", String.format("===========handle_new: newpos=%d,  newridx=%d", newClickpos,  c_idx));
+		Logger.LOGD("", String.format("===========handle_new: newpos=%d,  newridx=%d", newClickpos,  c_idx));
 		mViewPos.remove(mContainer.getChildAt(c_idx));
 		mContainer.removeViewAt(c_idx);
 		//获取下一张图片，并且设置onclick事件，且加入容器中
@@ -406,7 +408,7 @@ public class MyHorizontalScrollView extends HorizontalScrollView implements
 		switch (ev.getAction())
 		{
 		case MotionEvent.ACTION_MOVE:
-			//Log.e(TAG, getScrollX() + "");
+			//Logger.LOGD(TAG, getScrollX() + "");
 
 			int scrollX = getScrollX();
 			// 如果当前scrollX为view的宽度，加载下一张，移除第一张

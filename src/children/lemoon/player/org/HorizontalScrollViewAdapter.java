@@ -61,7 +61,7 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		        .diskCache(new UnlimitedDiskCache(cacheDir)) // default,  设置带时限的文件缓存是不和要求的，如果我获得不了之前文件，哪怕其过期了，我也删除不了
 		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
 		        .diskCacheFileCount(10000)			//10000 pics    
-		        //.writeDebugLogs()				// Log.d()
+		        //.writeDebugLogs()				// Logger.LOGD()
 		        .defaultDisplayImageOptions(new Builder()
 		        								.cacheOnDisc(true)
 		        								.cacheOnDisk(true)
@@ -113,7 +113,7 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		PlayItemEntity pie = mDatas.get(position);
  
 		mLoader.displayImage(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), viewHolder.mImg);
-		//Log.e("", "pos:"+position);
+		//Logger.LOGD("", "pos:"+position);
  		
 		if(mAct.mHListView.getClickPos() == position){
 			viewHolder.mImgPlaying.setVisibility(View.VISIBLE);

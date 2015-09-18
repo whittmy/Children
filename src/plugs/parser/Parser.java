@@ -67,8 +67,8 @@ public class Parser {
 			// if (SyncNetStringClient.isOk()) {
 			// Header[] header = SyncNetStringClient.getHeader();
 			// String m3u8 = SyncNetStringClient.getContent();
-			// Log.e("", header.toString());
-			// Log.e("", m3u8);
+			// Logger.LOGD("", header.toString());
+			// Logger.LOGD("", m3u8);
 			// }
 			//
 			// }
@@ -109,7 +109,7 @@ public class Parser {
 					getargs = getargs.substring(0, getargs.length() - 2);
 
 				String returl = target + getargs;
-				// Log.e("", returl);
+				// Logger.LOGD("", returl);
 
 				headers = new BasicHeader[5];
 				headers[0] = new BasicHeader("Accept-Encoding", "gzip,deflate,sdch");
@@ -121,14 +121,14 @@ public class Parser {
 				SyncNetStringClient.get(returl, headers, null);
 				if (SyncNetStringClient.isOk()) {
 					String ret = SyncNetStringClient.getContent();
-					// Log.e("", ret);
+					// Logger.LOGD("", ret);
 
 					pattern = Pattern.compile("id=(.+?)\"");
 					matcher = pattern.matcher(ret);
 					if (matcher.find()) {
 						String id = matcher.group(1);
 						String url = "http://www.flvcd.com/diy/diy00" + id + ".htm";
-						// Log.e("", url);
+						// Logger.LOGD("", url);
 						headers = new BasicHeader[2];
 						headers[0] = new BasicHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101");
 						headers[1] = new BasicHeader("Accept", "image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*");
@@ -136,7 +136,7 @@ public class Parser {
 						SyncNetStringClient.get(url, headers, null);
 						if (SyncNetStringClient.isOk()) {
 							ret = SyncNetStringClient.getContent();
-							// Log.e("", ret);
+							// Logger.LOGD("", ret);
 
 							pattern = Pattern.compile("<U>(http.+)");// <U>(http.+)\\s<C>(.+)\\s<US>(.+)
 							matcher = pattern.matcher(ret);
@@ -147,7 +147,7 @@ public class Parser {
 																	// +
 																	// matcher.group(3);
 								retUrls.add(rslturl);
-								// Log.e("rslturl", rslturl);
+								// Logger.LOGD("rslturl", rslturl);
 							}
 							return retUrls;
 						}

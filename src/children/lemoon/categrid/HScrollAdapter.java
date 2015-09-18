@@ -64,8 +64,10 @@ public class HScrollAdapter extends BaseAdapter {
 	
 	HashMap<String,Long> mCourseAndDownIdMap ; //保存课程id与其下载id的对应关系
 	LongSparseArray<View> mDownIdAndViewMap; //保存下载id与其对应的进度view的对应关系
+	String mStyle = "";
 	
-	public HScrollAdapter(Activity paramActivity, LinkedList<PlayItemEntity> paramLinkedList, ImageLoader loader, HashMap<String,Long> ar1, LongSparseArray<View>ar2 ) {
+	
+	public HScrollAdapter(Activity paramActivity, LinkedList<PlayItemEntity> paramLinkedList, ImageLoader loader, HashMap<String,Long> ar1, LongSparseArray<View>ar2 , String style) {
 		this.context = paramActivity;
 		this.data = paramLinkedList;
 		mFlater = LayoutInflater.from(paramActivity);
@@ -78,6 +80,8 @@ public class HScrollAdapter extends BaseAdapter {
 		
 		mCourseAndDownIdMap = ar1;
 		mDownIdAndViewMap = ar2;
+		
+		mStyle = style;
 	}
 
 	
@@ -122,22 +126,31 @@ public class HScrollAdapter extends BaseAdapter {
 
 	 
 	public View getView(int paramInt, View v, ViewGroup paramViewGroup) {
+		//debug
+		//mStyle = "role";
+		
 		Holder hold;
 		PlayItemEntity pie = (PlayItemEntity) this.data.get(paramInt);
 		if (v == null) {
-			v = mFlater.inflate(R.layout.act_cate_hlist_item, null); //因为 HorizontalListView extends AdapterView，而AdapterView又不支持addView，所以无法使用paramViewGroup
-			
 			hold = new Holder();
-			hold.icon = ((ImageView) v.findViewById(R.id.iv_icon));
-			//hold.icon.setLayoutParams(new FrameLayout.LayoutParams(151, 90));
-			
-			hold.title = ((TextView) v.findViewById(R.id.tv_title));
-			
-			//hold.bg = (ImageView)v.findViewById(R.id.hlist_item_bg);
-			hold.bg = (RelativeLayout)v.findViewById(R.id.hlist_item_bg);
-			//hold.bg.setLayoutParams(new RelativeLayout.LayoutParams(247, 157));  //2015.8.14，修正频繁回调horizontallistview的onLayout函数问题，具体见act_cate_hlist_item.xml文件
-			v.setTag(hold);
-			
+
+			if(mStyle.equals("role")){
+				v = mFlater.inflate(R.layout.act_cate_hlist_item_charactor, null);
+				hold.icon = (ImageView) v.findViewById(R.id.iv_icon);
+				
+				v.setTag(hold);		
+			}
+			else{
+				v = mFlater.inflate(R.layout.act_cate_hlist_item, null); //因为 HorizontalListView extends AdapterView，而AdapterView又不支持addView，所以无法使用paramViewGroup
+				
+				hold.title = ((TextView) v.findViewById(R.id.tv_title));
+				hold.icon = ((ImageView) v.findViewById(R.id.iv_icon));
+				//hold.icon.setLayoutParams(new FrameLayout.LayoutParams(151, 90));
+				hold.bg = (RelativeLayout)v.findViewById(R.id.hlist_item_bg);
+				//hold.bg.setLayoutParams(new RelativeLayout.LayoutParams(247, 157));  //2015.8.14，修正频繁回调horizontallistview的onLayout函数问题，具体见act_cate_hlist_item.xml文件
+				v.setTag(hold);				
+			}
+
 			//若是课件，便考虑下载的事情
 			if(pie.getType() == 10){
 				String id = pie.getIds();
@@ -147,27 +160,22 @@ public class HScrollAdapter extends BaseAdapter {
 					mDownIdAndViewMap.put(downid, v.findViewById(R.id.dlprogress));
 				}
 			}
-			
-			//hold.bg.setBackgroundResource(mBGs[paramInt%3]);
 		}
  
 		hold = (Holder) v.getTag();
 		
-		String name = pie.getName();
-		//Log.e("", "len="+name.length());
-		hold.title.setText(name.length()>7? name.substring(0, 6)+"..":name);
-		//Log.e("", pie.getName());
+		if(!mStyle.equals("role")){
+			String name = pie.getName();
+			hold.title.setText(name.length()>7? name.substring(0, 6)+"..":name);
+			hold.bg.setBackgroundResource(mBGs[paramInt%3]);
+		}
+		
 		mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
-
-		hold.bg.setBackgroundResource(mBGs[paramInt%3]);
-		
-		
 		return v;
 	}
 
 	class Holder {
 		public ImageView icon;
-		//public ImageView  bg;
 		public RelativeLayout bg;
 		public TextView title;
 

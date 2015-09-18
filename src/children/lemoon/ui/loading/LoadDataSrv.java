@@ -14,6 +14,8 @@ import org.apache.http.Header;
 import org.apache.tools.zip.ZipEntry;
 import org.apache.tools.zip.ZipFile;
 
+import children.lemoon.utils.Logger;
+
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.FileAsyncHttpResponseHandler;
 import com.nostra13.universalimageloader.cache.disc.impl.LimitedAgeDiskCache;
@@ -70,7 +72,7 @@ public class LoadDataSrv extends Service {
 				Long loadingDate = Long.valueOf(file.lastModified());
 				if (System.currentTimeMillis() - loadingDate.longValue() < 8*3600000) {
 					
-					Log.e("", "################earlyer - loadings data ！！！");
+					Logger.LOGD("", "################earlyer - loadings data ！！！");
 					
 					return super.onStartCommand(intent, flags, startId);
 				}
@@ -93,7 +95,7 @@ public class LoadDataSrv extends Service {
 				@Override
 				public void onSuccess(int statusCode, Header[] headers, File file) {
 					// TODO Auto-generated method stub
-					Log.e("", "$$$$$$$$$$$$$$$$$$$$$$ finishied");
+					Logger.LOGD("", "$$$$$$$$$$$$$$$$$$$$$$ finishied");
 					try {
 						unzip(file.getAbsolutePath(), getCacheDir()+"/loadings/");
 						 long currentTime = System.currentTimeMillis();
@@ -178,7 +180,7 @@ public class LoadDataSrv extends Service {
 					if (zipEntry.getSize() > 0) {
 						// 文件
 						File targetFile = new File(directoryPath+ File.separator + zipEntry.getName());
-						//Log.d(TAG, new String(zipEntry.getName().getBytes(),"UTF-8"));
+						//Logger.LOGD(TAG, new String(zipEntry.getName().getBytes(),"UTF-8"));
 						os = new BufferedOutputStream(new FileOutputStream(targetFile));
 						is = zipFile.getInputStream(zipEntry);
 						byte[] buffer = new byte[4096];
@@ -235,7 +237,7 @@ public class LoadDataSrv extends Service {
 //        	
 //            ZipEntry entry = ((ZipEntry)entries.nextElement());
 //            InputStream in = zf.getInputStream(entry);
-//            //Log.e("", entry.getName());
+//            //Logger.LOGD("", entry.getName());
 //            String str = folderPath + File.separator + entry.getName();
 //            str = new String(str.getBytes("8859_1"), "GB2312");
 //

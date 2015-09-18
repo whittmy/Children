@@ -365,7 +365,7 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	    			
 	    			HorizontalListView hv = mHlistArr.get(adp.getIdx()) ;
 	    			//在ListView中，使用getChildAt(index)的取值，只能是当前可见区域（列表可滚动）的子项！ 即取值范围在 >= ListView.getFirstVisiblePosition() &&  <= ListView.getLastVisiblePosition(); 
-	    			Log.e("", "pos="+paramInt+", firstvispos="+hv.getFirstVisiblePosition()+", rslt="+(paramInt-hv.getFirstVisiblePosition()));
+	    			Logger.LOGD("", "pos="+paramInt+", firstvispos="+hv.getFirstVisiblePosition()+", rslt="+(paramInt-hv.getFirstVisiblePosition()));
 	     			View v = hv.getChildAt(paramInt-hv.getFirstVisiblePosition());
 	     			final View v1 = v.findViewById(R.id.dlprogress);  //完成时要清除掉
 	     			if(v1.getTag() != null){
@@ -515,7 +515,7 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 						TextView tx = (TextView)v.findViewById(R.id.header_title);
 						tx.setText(h.getTitle());
 
-						HScrollAdapter adp = new HScrollAdapter(MoviesGridActivity.this, childlist, mLoader, mCourseAndDownIdMap, mDownIdAndViewMap);
+						HScrollAdapter adp = new HScrollAdapter(MoviesGridActivity.this, childlist, mLoader, mCourseAndDownIdMap, mDownIdAndViewMap, h.getStyle());
 						adp.setIdx(i); //setidx,用于其它地方定位"是哪个类别"
 						adp.setTypeId(h.getIds()); // settypeid 用于再次请求，否则怎么去取下一页了，因为“类别”是必须的
 						mHAdpArr.addFirst(adp);
@@ -535,10 +535,10 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 							@Override
 							public void onScroll(View view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 								// TODO Auto-generated method stub
-								//Log.e("", "onScroll:  "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
+								//Logger.LOGD("", "onScroll:  "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
 
 								if(view != null ){
-									//Log.e("", "viewtg="+(Integer)view.getTag());
+									//Logger.LOGD("", "viewtg="+(Integer)view.getTag());
 									int idx = (Integer)view.getTag();
 									if(idx<0 || idx >= mHAdpArr.size()){
 										return;
@@ -647,11 +647,11 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	        public void onChange(boolean selfChange, Uri uri) {
 	        // TODO Auto-generated method stub
 	        	//super.onChange(selfChange, uri);
-	        	Log.e("", "onchange: uri="+uri);
+	        	Logger.LOGD("", "onchange: uri="+uri);
 	        	String url = uri.toString();
 	        	String id = url.substring(url.lastIndexOf("/")+1);
 	        	if(isNumeric(id)){
-	        		Log.e("", "getdlid="+id);
+	        		Logger.LOGD("", "getdlid="+id);
 	        		updateView(Integer.valueOf(id));
 	        	}
 	        }
@@ -824,7 +824,7 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		        .diskCache(new UnlimitedDiskCache(cacheDir)) // default,  设置带时限的文件缓存是不和要求的，如果我获得不了之前文件，哪怕其过期了，我也删除不了
 		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
 		        .diskCacheFileCount(10000)			//10000 pics    
-		        //.writeDebugLogs()				// Log.d()
+		        //.writeDebugLogs()				// Logger.LOGD()
 		        .defaultDisplayImageOptions(new Builder()
 		        								.cacheOnDisc(true)
 		        								.cacheOnDisk(true)

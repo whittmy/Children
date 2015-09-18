@@ -17,6 +17,8 @@ import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import children.lemoon.utils.Logger;
+
 public class CpuUtils {
 	public static double a;
 
@@ -347,10 +349,10 @@ public class CpuUtils {
 	public static boolean isExistFile(String path) {
 		File f = new File(path);
 		if (f.exists()) {
-			Log.d("CommonUtils", path + " exists.");
+			Logger.LOGD("CommonUtils", path + " exists.");
 			return true;
 		}
-		Log.d("CommonUtils", path + " can't be found.");
+		Logger.LOGD("CommonUtils", path + " can't be found.");
 
 		return false;
 	}

@@ -4,6 +4,8 @@ package children.lemoon.reqbased.utils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import children.lemoon.utils.Logger;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -141,7 +143,7 @@ public class DeviceUtil {
 	     //例如：eth0      Link encap:Ethernet  HWaddr 00:16:E8:3E:DF:67
 	     if(result.length()>0 && result.contains("HWaddr")==true){
 	         Mac = result.substring(result.indexOf("HWaddr")+6, result.length()-1);
-	         Log.i("test","Mac:"+Mac+" Mac.length: "+Mac.length());
+	         Logger.LOGD("test","Mac:"+Mac+" Mac.length: "+Mac.length());
 	          
 	         if(Mac.length()>1){
 	             Mac = Mac.replaceAll(" ", "");
@@ -151,7 +153,7 @@ public class DeviceUtil {
 	                 result +=tmp[i];
 	             }
 	         }
-	         Log.i("test",result+" result.length: "+result.length());            
+	         Logger.LOGD("test",result+" result.length: "+result.length());            
 	     }
 	     return result;
 	 }   
@@ -168,11 +170,11 @@ public class DeviceUtil {
 	         //执行命令cmd，只取结果中含有filter的这一行
 	         while ((line = br.readLine ()) != null && line.contains(filter)== false) {   
 	             //result += line;
-	             Log.i("test","line: "+line);
+	             Logger.LOGD("test","line: "+line);
 	         }
 	          
 	         result = line;
-	         Log.i("test","result: "+result);
+	         Logger.LOGD("test","result: "+result);
 	     }   
 	     catch(Exception e) {   
 	         e.printStackTrace();   

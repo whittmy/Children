@@ -3,6 +3,8 @@
 import java.util.ArrayList;
 import java.util.List;
 
+import children.lemoon.utils.Logger;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -70,7 +72,7 @@ public class LrcView extends android.widget.TextView {
 		if(canvas == null) {
 			return;
 		}
-		Log.e("", "LrcView onDraw");
+		Logger.LOGD("", "LrcView onDraw");
 
 		
 		currentPaint.setColor(Color.argb(210, 251, 248, 29));

@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="children.lemoon"
-    android:versionCode="1"
-    android:versionName="1.0" >
+    android:versionCode="110"
+    android:versionName="1.1.0" >
 
     <uses-sdk
         android:minSdkVersion="12"
@@ -32,26 +32,14 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
-        <!--  
-        <activity android:name="children.lemoon.ui.MainUi"
-            android:screenOrientation="landscape" >
-            <intent-filter  >
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity 
-            android:name="children.lemoon.player.duplay.PlayingActivity"
-            android:screenOrientation="landscape" />
-      -->  
-      
+ 
         <activity android:name="children.lemoon.ui.MainActivity"
             android:screenOrientation="landscape" >
             <intent-filter  >
-                <!--    -->
+                <!--   
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-              
+               -->
             </intent-filter>
         </activity>        
        
@@ -81,6 +69,7 @@
         <activity 
             android:name="children.lemoon.music.MuPlayer"
             android:screenOrientation="landscape" 
+            android:launchMode="singleTask"
             android:exported="true">
             <!--  
             <intent-filter  >

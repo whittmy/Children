@@ -38,6 +38,7 @@ import children.lemoon.utils.Logger;
 
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -230,6 +231,31 @@ public class Player extends BaseReqActivity  {
 	
 	private BatteryRcvBindView batteryReceiver;
 	
+	
+	//showDialog(DLG_ITEM1);
+	static final int DLG_ITEM1 = 1;
+	@Override
+	@Deprecated
+	protected Dialog onCreateDialog(int id) {
+		// TODO Auto-generated method stub
+		switch(id){
+		case DLG_ITEM1:
+			CustomProgressDialog dlg = CustomProgressDialog.createDialog(this);
+			dlg.setMessage("加载中 (*≧▽≦*)");
+			return dlg; 
+		}
+		return super.onCreateDialog(id);
+	}
+
+	@Override
+	@Deprecated
+	protected void onPrepareDialog(int id, Dialog dialog) {
+		// TODO Auto-generated method stub
+		super.onPrepareDialog(id, dialog);
+		
+	}
+	
+	
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
@@ -298,7 +324,7 @@ public class Player extends BaseReqActivity  {
 	protected void onStop() {
 		// TODO Auto-generated method stub
 		super.onStop();
-		Log.e("", "onstop");
+		Logger.LOGD("", "onstop");
 		
 		onExitProc();
 	}
@@ -370,13 +396,13 @@ public class Player extends BaseReqActivity  {
 					super.runPersonelLogic();
 					try {
 						mHandler.sendEmptyMessage(CMD_REFRESH_SEEKBAR);
-						//Log.e("", "seekbar...refresh...");
+						//Logger.LOGD("", "seekbar...refresh...");
 
 						sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						//e.printStackTrace();
-						Log.e("", "interrupt!");
+						Logger.LOGD("", "interrupt!");
 					}
 				}
 			};
@@ -396,6 +422,7 @@ public class Player extends BaseReqActivity  {
 		}); 
 		
 		mLoading = CustomProgressDialog.createDialog(this);
+		mLoading.setMessage("加载中 (*≧▽≦*)");
 		mLoading.show();	
 		
 		//集组显示
@@ -420,7 +447,7 @@ public class Player extends BaseReqActivity  {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 				// TODO Auto-generated method stub
-				Log.e("", "=================== onitemclick :"+ arg2);
+				Logger.LOGD("", "=================== onitemclick :"+ arg2);
  				((HorizontalScrollViewAdapter)arg0.getAdapter()).notifyDataSetChanged();
 				myPlay(arg2);
 			}
@@ -437,7 +464,7 @@ public class Player extends BaseReqActivity  {
 			@Override
 			public void onScroll(View view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 				// TODO Auto-generated method stub
-				Log.e("", "onScroll: "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
+				Logger.LOGD("", "onScroll: "+ firstVisibleItem+","+visibleItemCount+","+totalItemCount);
 
 				//对于请求的数据要先判断是否已经请求过了。
 				if(firstVisibleItem+visibleItemCount+12 >= totalItemCount //注意next函数，尽可能一致
@@ -455,7 +482,7 @@ public class Player extends BaseReqActivity  {
 					float end = firstVisibleItem+visibleItemCount;
 					int setgrpidx = (int) (Math.ceil(end/PAGE_SIZE)-1);
 					if(setgrpidx >= 0 && setgrpidx!=mSetsHList.getSelectPosition()){
-						Log.e("", "############ Alter setgroup :"+setgrpidx);
+						Logger.LOGD("", "############ Alter setgroup :"+setgrpidx);
 						mCurSetsGrpIdx = setgrpidx;
 						mSetsHList.setSelection(setgrpidx);
 					}
@@ -473,12 +500,12 @@ public class Player extends BaseReqActivity  {
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 				if(isPlaying()){
-					Log.e("", "btn: isplaying!!, begin to pause");
+					Logger.LOGD("", "btn: isplaying!!, begin to pause");
 					do_pause();
 					//mBtnPlay.setBackgroundResource(R.drawable.mv_btn_play);
 				}
 				else if(mbPause){
-					Log.e("", "btn: ispaused,begin to resmue!!");
+					Logger.LOGD("", "btn: ispaused,begin to resmue!!");
 					//mBtnPlay.setBackgroundResource(R.drawable.mv_btn_pause);
 					do_resume();
 				}
@@ -506,7 +533,7 @@ public class Player extends BaseReqActivity  {
 			@Override
 			public void onStartTrackingTouch(SeekBar seekBar) {
 				// TODO Auto-generated method stub
-				Log.e("", "seekbar.......onStartTrackingTouch");
+				Logger.LOGD("", "seekbar.......onStartTrackingTouch");
 				//ctrlShowMgr();
 			}
 
@@ -517,7 +544,7 @@ public class Player extends BaseReqActivity  {
 				int sMax = sBar.getMax();
 				mPlayer.seekTo(mDuration * dest / sMax);
 				
-				Log.e("", "seekbar.......onStopTrackingTouch");
+				Logger.LOGD("", "seekbar.......onStopTrackingTouch");
 				//ctrlShowMgr();
 			}
 		});
@@ -545,7 +572,7 @@ public class Player extends BaseReqActivity  {
 	private void next(boolean bplay){
 		if(mRunMode == Configer.RunMode.MODE_NETWORK){
 			if (mAdapter.getCount() - mHListView.getClickPos()  < 12) {  //这儿与onscroll事件是有些不一样的哦
-				Log.e("", "!!!!!! begin to load pg: " + (mCurPg + 1));
+				Logger.LOGD("", "!!!!!! begin to load pg: " + (mCurPg + 1));
 				queryPlayList(mCurPg + 1);
 			}
 		}
@@ -595,7 +622,7 @@ public class Player extends BaseReqActivity  {
 	
 	private void do_pause(){
 		if(mPlayer!=null && mPlayer.isPlaying()){	//isPlaying()函数怪怪的
-			Log.e("", "do_pause");
+			Logger.LOGD("", "do_pause");
 			mBtnPlay.setBackgroundResource(R.drawable.mv_btn_play);
 			mPlayer.pause();
 			mbPause = true;
@@ -618,9 +645,9 @@ public class Player extends BaseReqActivity  {
 	}
 	
 	private void do_resume(){
-		Log.e("", "Log");
+		Logger.LOGD("", "Log");
 		if(mPlayer!=null && mbPause){
-			Log.e("", "do_resume");
+			Logger.LOGD("", "do_resume");
 			mBtnPlay.setBackgroundResource(R.drawable.mv_btn_pause);
 			mPlayer.start();
 			mbPause = false;
@@ -704,7 +731,7 @@ public class Player extends BaseReqActivity  {
 						mCurLocalPath += "/";
 					
 					for(String file : l){
-						//Log.e("", mCurLocalPath+file);
+						//Logger.LOGD("", mCurLocalPath+file);
 						PlayItemEntity pie = new PlayItemEntity();
 						pie.setName(file);
 						pie.setDownUrl(mCurLocalPath+file);
@@ -755,6 +782,8 @@ public class Player extends BaseReqActivity  {
 		// TODO Auto-generated method stub
 		super.onPostHandle(requestType, data, status, paramInt2, paramObject2, paramObject3);
 		if (data == null) {
+			mLoading.cancel();
+			mBReqing = false;
 			return;
 		}
  
@@ -764,8 +793,11 @@ public class Player extends BaseReqActivity  {
 		ResponePList plist = (ResponePList) rslt.getBody();
 		List<PlayItemEntity> pList = plist.getpList();
 		//如果数据空，则页面相关信息不会被变更
-		if (pList == null || pList.isEmpty())
+		if (pList == null || pList.isEmpty()){
+			mLoading.cancel();
+			mBReqing = false;
 			return;
+		}
  
 		ResponsePager pg = (ResponsePager)rslt.getPage();
 		if(pg != null){
@@ -855,14 +887,14 @@ public class Player extends BaseReqActivity  {
 					|| inRangeOfView(mCtrlContainer, ev)
 					|| inRangeOfView(mSetsHList, ev)){
  
-				Log.e("", "down on mHListView");
+				Logger.LOGD("", "down on mHListView");
 				if(System.currentTimeMillis()-mLasttm > 1500){
 					mLasttm = System.currentTimeMillis();
 					ctrlShowMgr();
 				}
 			}
 			else {
-				Log.e("", "down on Fill area");
+				Logger.LOGD("", "down on Fill area");
 				hideCtrlbar();
 				return true;
 			}
@@ -963,6 +995,8 @@ public class Player extends BaseReqActivity  {
 				if (player.isPlaying()) {
 					Logger.LOGD(TAG, "resume to pause MEDIA_INFO_BUFFERING_START");
 					needResume = true;
+					if(!mLoading.isShowing())
+						mLoading.show();
 				}
 				break;
 			case MediaPlayer.MEDIA_INFO_BUFFERING_END:
@@ -970,6 +1004,7 @@ public class Player extends BaseReqActivity  {
 					player.start();
 					needResume = false;
 					Logger.LOGD(TAG, "resume to play!!!! MEDIA_INFO_BUFFERING_END");
+					mLoading.cancel();
 				}
 				break;
 			default:
@@ -1040,7 +1075,7 @@ public class Player extends BaseReqActivity  {
 //		@Override
 //		public void onClick(View v) {
 //			// TODO Auto-generated method stub
-//			Log.e("", "fillevent, to hide it");
+//			Logger.LOGD("", "fillevent, to hide it");
 //			mBCtrlbarShow = true;
 //			toggleClick();
 //		}
@@ -1054,7 +1089,7 @@ public class Player extends BaseReqActivity  {
 			public void run() {
 				// TODO Auto-generated method stub
 				if (mBCtrlbarShow) {
-					Log.e("", "toggleClick begin to hide");
+					Logger.LOGD("", "toggleClick begin to hide");
 					// hide
 					mBCtrlbarShow = false;
 					mSeekThrd.setPause(true);
@@ -1070,7 +1105,7 @@ public class Player extends BaseReqActivity  {
 					mLayerTop.setVisibility(View.INVISIBLE);
 					mSurfaceView.requestFocus();
 				} else {
-					Log.e("", "toggleClick begin to show");
+					Logger.LOGD("", "toggleClick begin to show");
 					mBCtrlbarShow = true;
 					mSeekThrd.setPause(false);
  
@@ -1086,7 +1121,7 @@ public class Player extends BaseReqActivity  {
 	}
 	private Runnable ctrBarHidding = new Runnable() {
 		public void run() {
-			//Log.e("", "ctrBarHidding...");
+			//Logger.LOGD("", "ctrBarHidding...");
 			mBCtrlbarShow = true;
 			toggleClick();
 			mHandler.removeCallbacks(ctrBarHidding); //执行一次就取消
@@ -1095,7 +1130,7 @@ public class Player extends BaseReqActivity  {
 	};
 
 	void ctrlShowMgr() {
-		Log.e("", "---ctrlShowMgr");
+		Logger.LOGD("", "---ctrlShowMgr");
 		mHandler.removeCallbacks(ctrBarHidding); // 停止Timer
 		mHandler.postDelayed(ctrBarHidding, 4000); // 开始Timer
 	}
@@ -1133,7 +1168,7 @@ public class Player extends BaseReqActivity  {
 	//------------------------ receiver -------------------------
 	MyReceiver myReceiver;
 	private void registerMyRcv(){
-		Log.e(TAG, "Service registerMyRcv");
+		Logger.LOGD(TAG, "Service registerMyRcv");
 		
 		if(batteryReceiver == null){
 			batteryReceiver = new BatteryRcvBindView((BatteryImgView)findViewById(R.id.battery));

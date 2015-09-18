@@ -85,7 +85,7 @@ public class MoviesGridAdapter extends BaseAdapter {
 		mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
  
 		
-		//Log.e("", "pos:"+paramInt+", mod="+paramInt%3);
+		//Logger.LOGD("", "pos:"+paramInt+", mod="+paramInt%3);
 		hold.bg.setBackgroundResource(mBGs[paramInt%3]);
 
 		return v;

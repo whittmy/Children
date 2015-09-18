@@ -25,7 +25,7 @@ public final class L {
      * <p><b>This level is always logged.</b></p>
      */
     public static void e(String message, Throwable cause) {
-        Log.e(LOG_TAG, "[" + message + "]", cause);
+        Log.d(LOG_TAG, "[" + message + "]", cause);
     }
 
     /**
@@ -36,7 +36,7 @@ public final class L {
         StackTraceElement[] elements = t.getStackTrace();
 
         String callerClassName = elements[1].getFileName();
-        Log.e(LOG_TAG, "[" + callerClassName + "] " + msg);
+        Log.d(LOG_TAG, "[" + callerClassName + "] " + msg);
     }
 
     /**
@@ -72,7 +72,7 @@ public final class L {
      * <p><b>This level is always logged.</b></p>
      */
     public static void i(String message, Throwable cause) {
-        Log.i(LOG_TAG, "[" + message + "]", cause);
+        Log.d(LOG_TAG, "[" + message + "]", cause);
     }
 
     /**
@@ -83,7 +83,7 @@ public final class L {
         StackTraceElement[] elements = t.getStackTrace();
 
         String callerClassName = elements[1].getFileName();
-        Log.i(LOG_TAG, "[" + callerClassName + "] " + msg);
+        Log.d(LOG_TAG, "[" + callerClassName + "] " + msg);
     }
 
     /**

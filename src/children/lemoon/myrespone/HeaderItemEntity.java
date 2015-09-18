@@ -11,7 +11,8 @@ public class HeaderItemEntity extends BaseEntity {
 	private static final long serialVersionUID = 5191812891641741379L;
 	
 	private String title;
-	private String id;
+	private String id; 
+	private String style;
 	private List<PlayItemEntity> childs;
 	
 	
@@ -22,6 +23,14 @@ public class HeaderItemEntity extends BaseEntity {
 	public String getTitle(){
 		return title;
 	}
+	
+	public void setStyle(String s){
+		style = s;
+	}
+	
+	public String getStyle(){
+		return style;
+	}	
 	
 	
 	public String getIds(){

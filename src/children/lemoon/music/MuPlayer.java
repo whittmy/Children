@@ -154,7 +154,7 @@ public class MuPlayer extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 				// TODO Auto-generated method stub
-				Log.e("", "onItemClick");
+				Logger.LOGD("", "onItemClick");
 
 				if (mIService != null  && arg2 < mIService.getDatas().size()) {
 					mTvmuName.setText(mIService.getDatas().get(arg2).getName());
@@ -185,7 +185,7 @@ public class MuPlayer extends Activity {
 				mVisibleLastidx = firstVisibleItem + visibleItemCount;
 
 				// 这儿会反复执行！！！！！！！！！！！！！， 会反复去取数据， 当播放的时候是这样，这个问题得解决
-				Log.e("", "onScroll:" + firstVisibleItem + ", " + visibleItemCount + ", " + totalItemCount);
+				Logger.LOGD("", "onScroll:" + firstVisibleItem + ", " + visibleItemCount + ", " + totalItemCount);
 				// 本地模式不涉及翻页
 				if (mIService != null && mIService.getCurRunMode() == Configer.RunMode.MODE_LOCAL)
 					return;
@@ -241,7 +241,7 @@ public class MuPlayer extends Activity {
 		if(mIService == null && mConnection == null){
 			mConnection= new ServiceConnection() {
 				public void onServiceDisconnected(ComponentName name) {
-					 Log.d("","===============DisConnection");
+					 Logger.LOGD("","===============DisConnection");
 					 System.out.println("DisConnection!!!");
 					mIService = null;
 					mConnection = null;
@@ -249,7 +249,7 @@ public class MuPlayer extends Activity {
 	 
 				public void onServiceConnected(ComponentName name, IBinder service) {
 					// TODO Auto-generated method stub
-					Log.d("","=============Connection");
+					Logger.LOGD("","=============Connection");
 					mIService = (IMUService) ((MyBind)service);
 					if(mIService == null){
 						return;
@@ -265,9 +265,12 @@ public class MuPlayer extends Activity {
 	}
 
 	private void unbindMySvr() {
-		Log.d("", "unbindMySvr?????????????");
+		Logger.LOGD("", "unbindMySvr?????????????");
 		if (mIService != null){
 			unbindService(mConnection);
+			
+			mIService = null ;
+			mConnection = null;
 		}
 	}
 
@@ -320,7 +323,7 @@ public class MuPlayer extends Activity {
 	
 	//startService的目的是传参到service，并让其执行相应的指令。
 	void startMyService(){
-		Log.d("", "===startMyService====");
+		Logger.LOGD("", "===startMyService====");
 
 		Intent it = buildSrvIntent();
 		if(it!=null){
@@ -340,7 +343,7 @@ public class MuPlayer extends Activity {
 
 		// 定义和注册广播接收器
 		if(playerReceiver == null){
-			Log.d("","=========playerReceiver");
+			Logger.LOGD("","=========playerReceiver");
 			playerReceiver = new PlayerReceiver();
 			IntentFilter filter = new IntentFilter();
 			filter.addAction(Configer.Action.ACT_UPDATE_ACTION);
@@ -378,7 +381,7 @@ public class MuPlayer extends Activity {
 	protected void onResume() {
 		// TODO Auto-generated method stub
 		super.onResume();
-		Log.e("", "============== onresume=============");
+		Logger.LOGD("", "============== onresume=============");
 		
 		if(mLoading == null)
 			mLoading = CustomProgressDialog.createDialog(this);
@@ -390,14 +393,14 @@ public class MuPlayer extends Activity {
 					// TODO Auto-generated method stub
 					switch(v.getId()){
 					case R.id.btn_close_music:
-						Log.e("", "============ ok");
+						Logger.LOGD("", "============ ok");
 						Configer.sendNotice(MuPlayer.this, Configer.Action.SVR_CTL_ACTION, new String[]{"MSG", String.format("%d", Configer.PlayerMsg.STOP_MSG)});	
 						mExitDlg.dismiss();
 						MuPlayer.this.finish();
 						return;
 
 					case R.id.btn_bg_music:
-						Log.e("", "=========== cancel");
+						Logger.LOGD("", "=========== cancel");
 						mExitDlg.dismiss();
 						MuPlayer.this.finish();
 						return;
@@ -418,7 +421,7 @@ public class MuPlayer extends Activity {
 	protected void onStop() {
 		// TODO Auto-generated method stub
 		super.onStop();
-		Log.e("", "==============onstop========");
+		Logger.LOGD("", "==============onstop========");
 		updateListener.destory();
 		animator.cancel();
 		
@@ -516,15 +519,15 @@ public class MuPlayer extends Activity {
 					return;
 				initPlayInfo();
 				
-				Log.d("", "========Configer.Action.ACT_UPDATE_PlAYLIST");
+				Logger.LOGD("", "========Configer.Action.ACT_UPDATE_PlAYLIST");
 				mAdapter.notifyDataSetChanged();
 			}
 			else if(Intent.ACTION_SCREEN_ON.equals(action)){  
                 //mScreenStateListener.onScreenOn();  
-				Log.e("", "-------------Screen--------on");
+				Logger.LOGD("", "-------------Screen--------on");
             }else if(Intent.ACTION_SCREEN_OFF.equals(action)){  
                 //mScreenStateListener.onScreenOff();
-            	Log.e("", "-------------Screen--------off");
+            	Logger.LOGD("", "-------------Screen--------off");
             }  
             else if(action.equals(Configer.Action.ACT_STATUS_RESET)
             		||action.equals(Configer.Action.ACT_CUR_FINISHED)){
@@ -591,22 +594,22 @@ public class MuPlayer extends Activity {
 			else
 				// 否则就是从头开始播放
 				animator.start();
-			Log.e("", "#### animCtrl: play ###");
+			Logger.LOGD("", "#### animCtrl: play ###");
 			break;
 		case ANIM_PAUSE:// 暂停
 			updateListener.pause();
-			Log.e("", "#### animCtrl: pause ###");
+			Logger.LOGD("", "#### animCtrl: pause ###");
 			break;
 		case ANIM_REPLAY:
 			updateListener.play();
 			animator.end();
 			animator.start();
 			updateListener.pause();
-			Log.e("", "#### animCtrl: replay ###");
+			Logger.LOGD("", "#### animCtrl: replay ###");
 			break;
 		case ANIM_STOP:
 			animator.end();
-			Log.e("", "#### animCtrl: stop ###");
+			Logger.LOGD("", "#### animCtrl: stop ###");
 			break;
 		}
  
@@ -792,7 +795,7 @@ public class MuPlayer extends Activity {
 					return;
 				}
 
-				Log.e("", "================ countdowntimer: getFrameDelay=" + ValueAnimator.getFrameDelay());
+				Logger.LOGD("", "================ countdowntimer: getFrameDelay=" + ValueAnimator.getFrameDelay());
 				// 每隔动画播放的时间，我们都会将播放时间往回调整，以便重新播放的时候接着使用这个时间,同时也为了让整个动画不结束
 				long tm = ValueAnimator.getFrameDelay(); // 10ms, high-cpu
 

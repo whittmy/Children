@@ -3,6 +3,7 @@ package children.lemoon.categrid;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.app.DownloadManager.Request;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -53,6 +54,9 @@ import java.util.List;
 
 
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.Volley;
 import com.dd.database.DatabaseManager;
 import com.dd.database.QueryExecutor;
 import com.dd.my.CateCourseMgrDAO;
@@ -63,15 +67,7 @@ import com.handmark.pulltorefresh.library.PullToRefreshBase.OnRefreshListener;
 import com.handmark.pulltorefresh.library.PullToRefreshBase.OnRefreshListener2;
 import com.handmark.pulltorefresh.library.PullToRefreshScrollView;
 import com.loopj.android.http.AsyncHttpClient;
-import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiskCache;
-import com.nostra13.universalimageloader.cache.memory.impl.LruMemoryCache;
-import com.nostra13.universalimageloader.core.DisplayImageOptions;
-import com.nostra13.universalimageloader.core.DisplayImageOptions.Builder;
-import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
-import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
-import com.nostra13.universalimageloader.utils.StorageUtils;
-
+ 
 import children.lemoon.Configer;
 import children.lemoon.R;
 import children.lemoon.music.MuPlayer;
@@ -90,7 +86,8 @@ import children.lemoon.utils.Logger;
 import children.lemoon.utils.NetworkUtils;
 import children.lemoon.utils.download.DownloadManagerPro;
 import children.lemoon.utils.download.PreferencesUtils;
-  
+import dodola.example.android.bitmapfun.util.VolleyImageCache;
+   
 public class MoviesGridActivity extends BaseReqActivity implements View.OnClickListener, AdapterView.OnItemClickListener  {
 	private MoviesGridAdapter adapter;
 	private LinkedList<PlayItemEntity> data = new LinkedList<PlayItemEntity>();
@@ -106,7 +103,9 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	//public HorizontalListView mHListView;
 	//private HorizontalScrollViewAdapter mAdapter;
 	
-	
+ 	private RequestQueue mRequestQueue;
+ 	
+ 	
 	private PullToRefreshScrollView prvMovieList;
 	ScrollView mScrollView;
 	CustomProgressDialog mLoading;
@@ -214,6 +213,9 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		unregisterReceiver(batteryReceiver);
 	}
 	
+	
+	ImageLoader mLoader;
+	
 	//pcontainer;
 	protected void onCreate(Bundle paramBundle) {
 		super.onCreate(paramBundle);
@@ -223,7 +225,9 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		mLoading.show();
 		
 		batteryReceiver = new BatteryRcvBindView((BatteryImgView)findViewById(R.id.battery));
-
+		
+		mRequestQueue = Volley.newRequestQueue(this);
+		mLoader = new ImageLoader(mRequestQueue, VolleyImageCache.getInstance());
 
 		DatabaseManager.initializeInstance(this);
 		DatabaseManager.getInstance().executeQuery(new QueryExecutor() { //同步执行
@@ -257,9 +261,9 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
         
         
 		//mPrefs = PreferenceManager.getDefaultSharedPreferences(this);  
-		mCacheRoot = StorageUtils.getCacheDirectory(this).getAbsolutePath();
+		//mCacheRoot = StorageUtils.getCacheDirectory(this).getAbsolutePath();
 		
-		cfgImgLoader();
+		//cfgImgLoader();
 		this.cataName = ((TextView) findViewById(R.id.tv_movie_type));
 		this.cateGrid = ((MyGridView) findViewById(R.id.gv_movies_list));
 		this.cateGrid.setSelector(new ColorDrawable(Color.TRANSPARENT));
@@ -320,26 +324,26 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
  
 //		if(paramInt == 1){
 //			pie = new PlayItemEntity();
-//			pie.setId(1324);
-//			pie.setType(10);
+//			pie.setIds("1324");
+//			pie.setType(5);
 //			pie.setName("test1");
 //			pie.setDownUrl("http://app.znds.com/down/20150706/TJ-3.0.6-dangbei.apk");
 //		}
 //		else if(paramInt == 2){
 //			pie = new PlayItemEntity();
-//			pie.setId(5545);
-//			pie.setType(10);
+//			pie.setIds("5545");
+//			pie.setType(5);
 //			pie.setName("test2");
 //			pie.setDownUrl("http://app.znds.com/down/20150602/dsm-2.5.6-dangbei.apk");			
 //		}
 //		else if(paramInt == 3){
 //			pie = new PlayItemEntity();
-//			pie.setId(33424);
-//			pie.setType(10);
+//			pie.setIds("33424");
+//			pie.setType(5);
 //			pie.setName("test3");
 //			pie.setDownUrl("http://app.znds.com/down/20150608/vstqjh-2.6.7.2-dangbei.apk");			
 //		} 		
-		
+//		
 		if(pie.getType() == 5){
 			//课件
 			final String courseid = pie.getIds();
@@ -355,14 +359,8 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 			if(!new File(path+idstr).exists()){	  //?????
 	    		if(adp.getIdx() >= 0){
 	    			//toast提示
-	    			//MyToast.makeText(MoviesGridActivity.this, "正在下载课件，耐心点儿^_^").show();
-	    			
-	    			//Crouton.makeText(MoviesGridActivity.this, "正在下载课件，耐心点儿^_^", Style.INFO).show();
-	    			
-	    			
-	    			//Crouton.cancelAllCroutons();
-	    			
-	    			
+	    			Toast.makeText(MoviesGridActivity.this, "正在下载课件，请稍等", Toast.LENGTH_SHORT).show();
+
 	    			HorizontalListView hv = mHlistArr.get(adp.getIdx()) ;
 	    			//在ListView中，使用getChildAt(index)的取值，只能是当前可见区域（列表可滚动）的子项！ 即取值范围在 >= ListView.getFirstVisiblePosition() &&  <= ListView.getLastVisiblePosition(); 
 	    			Logger.LOGD("", "pos="+paramInt+", firstvispos="+hv.getFirstVisiblePosition()+", rslt="+(paramInt-hv.getFirstVisiblePosition()));
@@ -409,12 +407,16 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 			}
 			else
 			{
-				//打开
-				Intent it = new Intent();
-				ComponentName com= new ComponentName("flexplayer.lemoon", "flexplayer.lemoon.MainActivity");  
-				it.setComponent(com);  
-				it.putExtra("courseId", /*14060*/courseid);								
-				startActivity(it);
+				try{
+					//打开
+					Intent it = new Intent();
+					ComponentName com= new ComponentName("flexplayer.lemoon", "flexplayer.lemoon.MainActivity");  
+					it.setComponent(com);  
+					it.putExtra("courseId", /*14060*/courseid);								
+					startActivity(it);
+				} catch (ActivityNotFoundException e) {
+				} catch (Exception e) {
+				}
 				return;
 			}
 		}
@@ -702,9 +704,11 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	                        downloadProgress.setIndeterminate(false);
 	                        downloadProgress.setMax(info[1]);
 	                        downloadProgress.setProgress(info[0]);
+	                        Logger.LOGD("==============dl="+ info[0]);
 	                    }
 	                }
 	                else {
+	                	Logger.LOGD("==============dl= gone ");
 	                    downloadProgress.setVisibility(View.GONE);
 	                    downloadProgress.setMax(0);
 	                    downloadProgress.setProgress(0);
@@ -807,33 +811,33 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	public void onVoiceCommand(int paramInt) {
 	}
 
-	ImageLoader mLoader;
-	private void cfgImgLoader(){
-		mLoader = ImageLoader.getInstance();
-		File cacheDir = new File(mCacheRoot+"/pics/");	// ;
-		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this)
-		        .memoryCacheExtraOptions(112, 130) // default = device screen dimensions
-		        .diskCacheExtraOptions(112, 130, null)
-		        .threadPoolSize(3) // default 3
-		        .threadPriority(Thread.NORM_PRIORITY - 2) // default
-		        .tasksProcessingOrder(QueueProcessingType.FIFO) // default
-		        .denyCacheImageMultipleSizesInMemory()
-		        //.memoryCache(new LruMemoryCache(2 * 1024 * 1024))
-		        //.memoryCacheSize(2 * 1024 * 1024)
-		        //.memoryCacheSizePercentage(13) // default
-		        .diskCache(new UnlimitedDiskCache(cacheDir)) // default,  设置带时限的文件缓存是不和要求的，如果我获得不了之前文件，哪怕其过期了，我也删除不了
-		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
-		        .diskCacheFileCount(10000)			//10000 pics    
-		        //.writeDebugLogs()				// Logger.LOGD()
-		        .defaultDisplayImageOptions(new Builder()
-		        								.cacheOnDisc(true)
-		        								.cacheOnDisk(true)
-		        								//.cacheInMemory(true)
-		        								.showImageForEmptyUri(Configer.Res.get_icon_for_categrid())
-		        								.showImageOnLoading(Configer.Res.get_icon_for_categrid())
-		        								.showImageOnFail(Configer.Res.get_icon_for_categrid())
-		        								.build())
-		        .build();
-		mLoader.init(config);
-	}
+//	ImageLoader mLoader;
+//	private void cfgImgLoader(){
+//		mLoader = ImageLoader.getInstance();
+//		File cacheDir = new File(mCacheRoot+"/pics/");	// ;
+//		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this)
+//		        .memoryCacheExtraOptions(112, 130) // default = device screen dimensions
+//		        .diskCacheExtraOptions(112, 130, null)
+//		        .threadPoolSize(3) // default 3
+//		        .threadPriority(Thread.NORM_PRIORITY - 2) // default
+//		        .tasksProcessingOrder(QueueProcessingType.FIFO) // default
+//		        .denyCacheImageMultipleSizesInMemory()
+//		        //.memoryCache(new LruMemoryCache(2 * 1024 * 1024))
+//		        //.memoryCacheSize(2 * 1024 * 1024)
+//		        //.memoryCacheSizePercentage(13) // default
+//		        .diskCache(new UnlimitedDiskCache(cacheDir)) // default,  设置带时限的文件缓存是不和要求的，如果我获得不了之前文件，哪怕其过期了，我也删除不了
+//		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
+//		        .diskCacheFileCount(10000)			//10000 pics    
+//		        //.writeDebugLogs()				// Logger.LOGD()
+//		        .defaultDisplayImageOptions(new Builder()
+//		        								.cacheOnDisc(true)
+//		        								.cacheOnDisk(true)
+//		        								//.cacheInMemory(true)
+//		        								.showImageForEmptyUri(Configer.Res.get_icon_for_categrid())
+//		        								.showImageOnLoading(Configer.Res.get_icon_for_categrid())
+//		        								.showImageOnFail(Configer.Res.get_icon_for_categrid())
+//		        								.build())
+//		        .build();
+//		mLoader.init(config);
+//	}
 }

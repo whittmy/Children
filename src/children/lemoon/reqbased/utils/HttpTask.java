@@ -4,6 +4,7 @@ package children.lemoon.reqbased.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
@@ -251,11 +252,21 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
  		 int versionCode = DeviceUtil.getVersionCode(context);
  		 String timeStamp = TimeUtil.getTimeStamp();
  		 
- 		 SharedPreferences sp = context.getSharedPreferences("sys_info", Context.MODE_WORLD_WRITEABLE);  
- 		 String firmware = sp.getString("ota_ver", "");
- 		 if(firmware.isEmpty()){
- 			firmware = sp.getString("firm_ver","");
- 		 }
+ 		 
+ 		String firmware = "";
+        try {
+        	Context otherAppsContext = context.createPackageContext("adjusttime.lemoon", 0);
+            SharedPreferences  sp = otherAppsContext.getSharedPreferences("firm_info", Context.MODE_MULTI_PROCESS|Context.MODE_WORLD_READABLE);
+            
+	        firmware = sp.getString("ota_ver", "");
+	   		if(firmware.isEmpty()){
+	   			firmware = sp.getString("firm_ver","");
+	   		}
+        } catch (NameNotFoundException e) {
+        	e.printStackTrace();
+        }
+        
+		
 
 		 localHashMap.put("vercode", String.valueOf(versionCode));
   		 localHashMap.put("reqtime", timeStamp);

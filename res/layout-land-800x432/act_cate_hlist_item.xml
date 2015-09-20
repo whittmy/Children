@@ -59,6 +59,7 @@
 				android:background="@drawable/bg_border"
 				android:scaleType="fitXY"
 		        android:focusable="false"/>  
+		        <!--  
 		   <ProgressBar 
 		        android:id="@+id/dlprogress"
 		        style="?android:attr/progressBarStyleHorizontal"
@@ -70,8 +71,22 @@
 		        android:progressDrawable="@drawable/progressbar_drawable"
 		        android:visibility="invisible"
 		         />      
+		         -->
 	    </FrameLayout>
-	
+	    
+			   <ProgressBar 
+		        android:id="@+id/dlprogress"
+		        style="?android:attr/progressBarStyleHorizontal"
+		        android:layout_width="151dp"
+		        android:layout_height="7dp"
+		        android:layout_below="@+id/imgcontainer"
+		        android:max="100"
+		        android:progress="10"
+		        android:layout_alignLeft="@+id/imgcontainer"
+		        android:progressDrawable="@drawable/progressbar_drawable"
+		        android:background="#666666"
+		        android:visibility="invisible"
+		         />    
 	<!--
 		android:singleLine="true" 好像个别item的居中有问题。
 		改为下面可以完全解决：

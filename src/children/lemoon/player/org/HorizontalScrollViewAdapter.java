@@ -4,22 +4,13 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiskCache;
-import com.nostra13.universalimageloader.cache.disc.naming.HashCodeFileNameGenerator;
-import com.nostra13.universalimageloader.cache.memory.impl.LruMemoryCache;
-import com.nostra13.universalimageloader.core.DisplayImageOptions;
-import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
-import com.nostra13.universalimageloader.core.DisplayImageOptions.Builder;
-import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
-import com.nostra13.universalimageloader.core.decode.BaseImageDecoder;
-import com.nostra13.universalimageloader.core.download.BaseImageDownloader;
-import com.nostra13.universalimageloader.utils.StorageUtils;
-
-
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.Volley;
+ 
 import children.lemoon.Configer;
 import children.lemoon.R;
 import children.lemoon.myrespone.PlayItemEntity;
+import dodola.example.android.bitmapfun.util.VolleyImageCache;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -46,32 +37,35 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		this.mDatas = mDatas;
 		mAct = (Player)cx;
 		
-		mLoader = ImageLoader.getInstance();
-		File cacheDir = StorageUtils.getCacheDirectory(cx);
-		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(cx)
-		        .memoryCacheExtraOptions(112, 130) // default = device screen dimensions
-		        .diskCacheExtraOptions(112, 130, null)
-		        .threadPoolSize(3) // default 3
-		        .threadPriority(Thread.NORM_PRIORITY - 2) // default
-		        .tasksProcessingOrder(QueueProcessingType.FIFO) // default
-		        .denyCacheImageMultipleSizesInMemory()
-		        //.memoryCache(new LruMemoryCache(2 * 1024 * 1024))
-		        //.memoryCacheSize(2 * 1024 * 1024)
-		        //.memoryCacheSizePercentage(13) // default
-		        .diskCache(new UnlimitedDiskCache(cacheDir)) // default,  设置带时限的文件缓存是不和要求的，如果我获得不了之前文件，哪怕其过期了，我也删除不了
-		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
-		        .diskCacheFileCount(10000)			//10000 pics    
-		        //.writeDebugLogs()				// Logger.LOGD()
-		        .defaultDisplayImageOptions(new Builder()
-		        								.cacheOnDisc(true)
-		        								.cacheOnDisk(true)
-		        								//.cacheInMemory(true)
-		        								.showImageForEmptyUri(Configer.Res.get_icon_for_player())
-		        								.showImageOnLoading(Configer.Res.get_icon_for_player())
-		        								.showImageOnFail(Configer.Res.get_icon_for_player())
-		        								.build())		        
-		        .build();
-		mLoader.init(config);
+//		mLoader = ImageLoader.getInstance();
+//		File cacheDir = StorageUtils.getCacheDirectory(cx);
+//		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(cx)
+//		        .memoryCacheExtraOptions(112, 130) // default = device screen dimensions
+//		        .diskCacheExtraOptions(112, 130, null)
+//		        .threadPoolSize(3) // default 3
+//		        .threadPriority(Thread.NORM_PRIORITY - 2) // default
+//		        .tasksProcessingOrder(QueueProcessingType.FIFO) // default
+//		        .denyCacheImageMultipleSizesInMemory()
+//		        //.memoryCache(new LruMemoryCache(2 * 1024 * 1024))
+//		        //.memoryCacheSize(2 * 1024 * 1024)
+//		        //.memoryCacheSizePercentage(13) // default
+//		        .diskCache(new UnlimitedDiskCache(cacheDir)) // default,  设置带时限的文件缓存是不和要求的，如果我获得不了之前文件，哪怕其过期了，我也删除不了
+//		        .diskCacheSize(500 * 1024 *1024)		//500M    			//所以缓存啊，还是我定期去清理
+//		        .diskCacheFileCount(10000)			//10000 pics    
+//		        //.writeDebugLogs()				// Logger.LOGD()
+//		        .defaultDisplayImageOptions(new Builder()
+//		        								.cacheOnDisc(true)
+//		        								.cacheOnDisk(true)
+//		        								//.cacheInMemory(true)
+//		        								.showImageForEmptyUri(Configer.Res.get_icon_for_player())
+//		        								.showImageOnLoading(Configer.Res.get_icon_for_player())
+//		        								.showImageOnFail(Configer.Res.get_icon_for_player())
+//		        								.build())		        
+//		        .build();
+//		mLoader.init(config);
+		
+		
+		mLoader = new ImageLoader(Volley.newRequestQueue(mAct), VolleyImageCache.getInstance());
 	}
 	
 	@Override
@@ -112,9 +106,13 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
  
 		PlayItemEntity pie = mDatas.get(position);
  
-		mLoader.displayImage(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), viewHolder.mImg);
+		ImageLoader.ImageListener imageListener = ImageLoader.getImageListener(mAct, viewHolder.mImg, Configer.Res.get_icon_for_player(), Configer.Res.get_icon_for_player(), 0,0);
+		
+		//mLoader.displayImage(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), viewHolder.mImg);
 		//Logger.LOGD("", "pos:"+position);
- 		
+		mLoader.get(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), imageListener);
+		
+		
 		if(mAct.mHListView.getClickPos() == position){
 			viewHolder.mImgPlaying.setVisibility(View.VISIBLE);
 		}

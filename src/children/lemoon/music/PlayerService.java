@@ -818,10 +818,13 @@ public class PlayerService extends BaseReqService {
 	}
 	
 	protected void onPostHandle(int requestType, Object data, boolean status, int paramInt2, Object paramObject2, Object paramObject3) {
+		Configer.sendNotice(PlayerService.this, Configer.Action.ACT_HIDE_LOADING, null);
+
 		if (data == null) {
 			return;
 		}
 
+		
 		// 请求成功，并返回游戏列表
 		// if (requestType == 31) { }
 
@@ -861,7 +864,6 @@ public class PlayerService extends BaseReqService {
 			Configer.sendNotice(PlayerService.this, Configer.Action.ACT_NEW_CATE_DATA, null);
 		}
 		Configer.sendNotice(PlayerService.this, Configer.Action.ACT_UPDATE_PlAYLIST, null);
-		Configer.sendNotice(PlayerService.this, Configer.Action.ACT_HIDE_LOADING, null);
 	};
 	
 	

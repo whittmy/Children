@@ -21,14 +21,8 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.LinkedList;
 
-import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiskCache;
-import com.nostra13.universalimageloader.cache.memory.impl.LruMemoryCache;
-import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
-import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
-import com.nostra13.universalimageloader.utils.StorageUtils;
-
-
+import com.android.volley.toolbox.ImageLoader;
+ 
 
 import children.lemoon.Configer;
 import children.lemoon.R;
@@ -82,8 +76,10 @@ public class MoviesGridAdapter extends BaseAdapter {
 		hold.title.setText(pie.getName());
 		
  
-		mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
- 
+		ImageLoader.ImageListener imageListener = ImageLoader.getImageListener(context, hold.icon, Configer.Res.get_icon_for_categrid(), Configer.Res.get_icon_for_categrid(), 0,0);
+		
+		//mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
+		mLoader.get(Configer.IMG_URL_PRE+pie.getPic(), imageListener);
 		
 		//Logger.LOGD("", "pos:"+paramInt+", mod="+paramInt%3);
 		hold.bg.setBackgroundResource(mBGs[paramInt%3]);

@@ -1,6 +1,7 @@
 package children.lemoon.player.org;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
@@ -20,6 +21,7 @@ import com.devsmart.android.ui.HorizontalListView.OnScrollListener;
 
 import children.lemoon.Configer;
 import children.lemoon.R;
+import children.lemoon.music.PlayerService.FileNameSelector;
 import children.lemoon.music.PlayerService.MyReceiver;
 import children.lemoon.music.util.MediaUtil;
 import children.lemoon.myrespone.PlayItemEntity;
@@ -705,6 +707,37 @@ public class Player extends BaseReqActivity  {
 		System.exit(0);
 	}
 
+//	public class FileNameSelector implements FilenameFilter{
+//		@Override
+//		public boolean accept(File arg0, String arg1) {
+//			// TODO Auto-generated method stub
+//			arg1 = arg1.toLowerCase();
+//			
+//			
+//			if(arg1.endsWith("mp3")
+//				|| arg1.endsWith("wma")
+//				|| arg1.endsWith("wav")
+//				|| arg1.endsWith("mod")
+//				|| arg1.endsWith("cd")
+//				|| arg1.endsWith("md")
+//				|| arg1.endsWith("asf")
+//				|| arg1.endsWith("aac")
+//				|| arg1.endsWith("mp3pro")
+//				|| arg1.endsWith("vqf")
+//				|| arg1.endsWith("flac")
+//				|| arg1.endsWith("ape")
+//				|| arg1.endsWith("mid")
+//				|| arg1.endsWith("ogg")
+//				|| arg1.endsWith("m4a")
+//				|| arg1.endsWith("aac+")
+//				|| arg1.endsWith("aiff")
+//				|| arg1.endsWith("vqf"))
+//				return true;
+//			return false;
+//		}
+//	}
+	
+	
 	boolean mBfirstData = true;
 	boolean mBReqing = false;
 	private boolean queryPlayList(int pgIdx/* , int pgSize */) {
@@ -719,8 +752,22 @@ public class Player extends BaseReqActivity  {
 					mData.clear();
 					mCurPg = 0;
 				
+					HashMap<String, Integer> extSets = new HashMap<String, Integer>();
+					extSets.put("mpeg", 1);			extSets.put("mpg", 1);			extSets.put("dat", 1);
+					extSets.put("ra", 1);			extSets.put("rm", 1);			extSets.put("rmvb", 1);
+					extSets.put("mp4", 1);			extSets.put("flv", 1);			extSets.put("mov", 1);
+					extSets.put("qt", 1);			extSets.put("asf", 1);			extSets.put("wmv", 1);
+					extSets.put("avi", 1);			extSets.put("3gp", 1);			extSets.put("mkv", 1);
+					extSets.put("f4v", 1);			extSets.put("m4v", 1);			extSets.put("m4p", 1);
+					extSets.put("m2v", 1);			extSets.put("dat", 1);			extSets.put("xvid", 1);
+					extSets.put("divx", 1);			extSets.put("vob", 1);			extSets.put("mpv", 1);
+					extSets.put("mpeg4", 1);		extSets.put("mpe", 1);			extSets.put("mlv", 1);
+					extSets.put("ogm", 1);			extSets.put("m2ts", 1);			extSets.put("mts", 1);
+					extSets.put("ask", 1);			extSets.put("trp", 1);			extSets.put("tp", 1);
+					extSets.put("ts", 1);
+					
 					File f = new File(mCurLocalPath);
-					String[] l = f.list();
+					File[] l = f.listFiles();			//f.list(new FileNameSelector());
 					if(l == null){
 						//Toast.makeText(this, mCurLocalPath+ " 目录下没有内容", Toast.LENGTH_SHORT).show();
 						onExitProc();
@@ -730,11 +777,24 @@ public class Player extends BaseReqActivity  {
 					if(!mCurLocalPath.endsWith("/"))
 						mCurLocalPath += "/";
 					
-					for(String file : l){
+					for(File file : l){
 						//Logger.LOGD("", mCurLocalPath+file);
+						if(file.isDirectory())
+							continue;
+						
+						String name = file.getName();
+						int pos = name.lastIndexOf(".");
+						if(pos < 0 || (pos>=(name.length()-1)))
+							continue;
+						 
+						String ext = name.substring(pos+1).toLowerCase();
+						if(extSets.get(ext) == null)
+							continue;
+					 
+						
 						PlayItemEntity pie = new PlayItemEntity();
-						pie.setName(file);
-						pie.setDownUrl(mCurLocalPath+file);
+						pie.setName(name);
+						pie.setDownUrl(mCurLocalPath+name);
 						mData.add(pie);
 					}		
 					mBfirstData = false;

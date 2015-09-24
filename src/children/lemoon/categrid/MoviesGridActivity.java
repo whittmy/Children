@@ -343,7 +343,7 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 //			pie.setName("test3");
 //			pie.setDownUrl("http://app.znds.com/down/20150608/vstqjh-2.6.7.2-dangbei.apk");			
 //		} 		
-//		
+////		
 		if(pie.getType() == 5){
 			//课件
 			final String courseid = pie.getIds();

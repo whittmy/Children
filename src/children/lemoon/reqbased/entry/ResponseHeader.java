@@ -2,6 +2,8 @@ package children.lemoon.reqbased.entry;
 
 //ok
 
+import java.util.List;
+
 import com.google.gson.Gson;
 
 public class ResponseHeader {
@@ -17,9 +19,19 @@ public class ResponseHeader {
 	private int retStatus;
 	private String userId;
 	private String userType;
-
+	private List<ExtraEntry> extra;
+	
 	int flag;
 
+	
+	public List<ExtraEntry> getExtra(){
+		return extra;
+	}
+	public void setExtra(List<ExtraEntry> a){
+		extra = a;
+	}
+	
+	
 	public void setFlag(int paramInt) {
 		this.flag = paramInt;
 	}

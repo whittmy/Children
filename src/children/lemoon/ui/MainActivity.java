@@ -16,6 +16,7 @@ import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.RecommendEntity;
 import children.lemoon.myrespone.ResponeChildClassList;
 import children.lemoon.myrespone.ResponePList;
+import children.lemoon.player.duplay.PlayingActivity;
 import children.lemoon.player.org.Player;
 import children.lemoon.player.org.MyHorizontalScrollView.CurrentImageChangeListener;
 import children.lemoon.player.org.MyHorizontalScrollView.OnItemClickListener;
@@ -121,7 +122,14 @@ public class MainActivity extends Activity{
 			if(v.getId() == R.id.btn_1){
 				Intent it = new Intent(MainActivity.this, MoviesGridActivity.class);
 				it.putExtra("curCata",  "生活常识");
-				it.putExtra("cataId", 3);					
+				it.putExtra("cataId", 3);				
+				
+
+				//seekbar
+//				Intent it = new Intent(MainActivity.this, PlayingActivity.class);
+//				it.putExtra("video_name", "测试");
+//				it.putExtra("video_path", "http://www.nybgjd.com/erge/piapia_v2/playurl/36114/youku/1444721454624/7889E2067851672D59EF44D600306076");
+				
 				
 				startActivity(it);
 			}

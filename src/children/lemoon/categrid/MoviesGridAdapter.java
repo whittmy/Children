@@ -79,7 +79,8 @@ public class MoviesGridAdapter extends BaseAdapter {
 		ImageLoader.ImageListener imageListener = ImageLoader.getImageListener(context, hold.icon, Configer.Res.get_icon_for_categrid(), Configer.Res.get_icon_for_categrid(), 0,0);
 		
 		//mLoader.displayImage(Configer.IMG_URL_PRE+pie.getPic(), hold.icon);
-		mLoader.get(Configer.IMG_URL_PRE+pie.getPic(), imageListener);
+		//mLoader.get(Configer.IMG_URL_PRE+pie.getPic(), imageListener);
+		mLoader.get(pie.getPic()==null?"": pie.getPic(), imageListener);
 		
 		//Logger.LOGD("", "pos:"+paramInt+", mod="+paramInt%3);
 		hold.bg.setBackgroundResource(mBGs[paramInt%3]);

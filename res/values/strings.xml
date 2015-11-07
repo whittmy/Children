@@ -20,6 +20,8 @@
     <string name="zoom_scale">等比</string>
     
     
+    <!-- (*≧▽≦*) -->
+    <string name="default_loading_txt">加载中</string>
     
         <string name="pull_to_refresh_pull_label">下拉刷新</string>
     <string name="pull_to_refresh_release_label">松开后刷新</string>

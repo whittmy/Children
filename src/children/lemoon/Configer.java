@@ -7,10 +7,10 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 
 public class Configer {
-	public static  String OEM_NAME = "piapia_v2"; 
-	public static boolean _DEBUG = false;
+	public static  String OEM_NAME = "piapia_v3"; 
+	public static boolean _DEBUG = true;
 	public static String COM_KEY = "@#xpia&*1452";
-	public static String IMG_URL_PRE = "http://www.nybgjd.com/misc/story_res/images/";
+	//public static String IMG_URL_PRE = "http://www.nybgjd.com/misc/story_res/images/";
 	
 	public static class Res{
 		private static final int default_icon_for_categrid1 = R.drawable.mmh_p;
@@ -76,8 +76,8 @@ public class Configer {
 	public static final int REQ_AUDIO_PLAYLIST = 1002;
 	// rocking debug !!!!!!!!!!!
 	public static String initUrl(int paramInt) {
-		String prefix = "http://www.nybgjd.com/3dclub/api4/";
-		prefix = "";
+		String prefix = "http://www.nybgjd.com/erge/";
+		//prefix = "http://172.16.2.3/frw/erge.php?/erge/";
 		String rt = null;
 		switch (paramInt) // ok
 		{
@@ -86,10 +86,10 @@ public class Configer {
 			break;
 
 		case REQ_TYPE_HLIST:
-			rt = "http://www.nybgjd.com/erge/"+OEM_NAME+"/getHResList/";
+			rt = prefix + OEM_NAME+"/getHResList/";
 			break;
 		case REQ_TYPE_CATEINFO:
-			rt = "http://www.nybgjd.com/erge/"+OEM_NAME+"/getresList/";
+			rt = prefix + OEM_NAME+"/getresList/";
 			break;
 		case REQ_PLAYURL:
 			rt = "http://www.nybgjd.com/erge/"+OEM_NAME+"/playurl/";
@@ -100,11 +100,11 @@ public class Configer {
 			break;			
 		case REQ_VIDEO_PLAYLIST:
 			//rt = "http://10.0.2.2/ci/erge.php/erge/api/getPL/";
-			rt = "http://www.nybgjd.com/erge/"+OEM_NAME+"/getPL/";
+			rt = prefix + OEM_NAME+"/getPL/";
 			break;
 		case REQ_AUDIO_PLAYLIST:
 			//rt = "http://10.0.2.2/ci/erge.php/erge/api/getPL/a/";
-			rt = "http://www.nybgjd.com/erge/"+OEM_NAME+"/getPL/";
+			rt = prefix + OEM_NAME+"/getPL/";
 			break;			
 		}
 		return rt;
@@ -119,7 +119,7 @@ public class Configer {
 		public static final int PRIVIOUS_MSG = 605;	//上一首
 		public static final int NEXT_MSG = 606;		//下一首
 		public static final int PROGRESS_CHANGE = 607;//进度改变
-		public static final int PLAYING_MSG = 608;	//正在播放
+		//public static final int PLAYING_MSG = 608;	//正在播放
 		public static final int TOGGLEPAUSE_MSG = 609;	//播放/暂停
 	}
 	

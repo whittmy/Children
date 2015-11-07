@@ -74,11 +74,13 @@ import children.lemoon.music.MuPlayer;
 import children.lemoon.myrespone.HeaderItemEntity;
 import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.ResponeResList;
+import children.lemoon.myrespone.UrlInfoEntry;
 import children.lemoon.player.org.Player;
 import children.lemoon.reqbased.BaseReqActivity;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.entry.ResponsePager;
 import children.lemoon.reqbased.utils.HttpManger;
+import children.lemoon.reqbased.utils.MyUtil;
 import children.lemoon.ui.loading.CustomProgressDialog;
 import children.lemoon.ui.view.BatteryImgView;
 import children.lemoon.ui.view.BatteryRcvBindView;
@@ -372,7 +374,18 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	     			}
 	     			
 		            //开始下载   
-		            Uri resource = Uri.parse(encodeGB(pie.getDownUrl()));   
+	     			List<UrlInfoEntry> ulist = pie.getUrlList();
+	     			String src = "";
+	     			String idx = "";
+	     			if(ulist!=null && ulist.size()>0){
+	     				src = ulist.get(0).getSrc();	//这里就默认处理第一源了，不管那么多了
+	     				idx = ulist.get(0).getUrl();
+	     			}
+
+	     			long ts = System.currentTimeMillis();
+	     			String url =  Configer.initUrl(Configer.REQ_PLAYURL)+ pie.getIds()+"/"+src+"/"+idx+"/"+ts+"/"+ MyUtil.getSign(ts) ;
+
+		            Uri resource = Uri.parse(encodeGB(/*pie.getDownUrl()*/url));   
 		            DownloadManager.Request request = new DownloadManager.Request(resource);   
 		            request.setAllowedNetworkTypes(Request.NETWORK_MOBILE | Request.NETWORK_WIFI);   
 		            request.setAllowedOverRoaming(false);   

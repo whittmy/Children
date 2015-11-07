@@ -110,7 +110,8 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		
 		//mLoader.displayImage(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), viewHolder.mImg);
 		//Logger.LOGD("", "pos:"+position);
-		mLoader.get(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), imageListener);
+		//mLoader.get(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), imageListener);
+		mLoader.get(isEmtpy(pie.getPic())?"": pie.getPic(), imageListener);
 		
 		
 		if(mAct.mHListView.getClickPos() == position){

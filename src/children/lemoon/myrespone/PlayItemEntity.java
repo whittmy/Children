@@ -2,6 +2,7 @@ package children.lemoon.myrespone;
 
 //ok
 import java.net.URLEncoder;
+import java.util.List;
 
 import children.lemoon.reqbased.entry.BaseEntity;
 
@@ -12,6 +13,7 @@ public class PlayItemEntity extends BaseEntity {
 	private int fileSize;
 	private int playcnt;
 
+	private List<UrlInfoEntry> ulist;
 	private String downurl;
 	private String pic;
 	private String name;
@@ -21,6 +23,15 @@ public class PlayItemEntity extends BaseEntity {
 	private String src;
 	
 	private int type;
+	
+	
+	public List<UrlInfoEntry> getUrlList(){
+		return ulist;
+	}
+	public void setUrlList(List<UrlInfoEntry> l){
+		ulist = l;
+	}
+	
 	
 	public String getIds() {
 		return this.id;
@@ -54,13 +65,13 @@ public class PlayItemEntity extends BaseEntity {
 		return this.playcnt;
 	}
 
-	public void setDownUrl(String url) {
-		this.downurl = url;
-	}
-
-	public String getDownUrl() {
-		return this.downurl;
-	}
+//	public void setDownUrl(String url) {
+//		this.downurl = url;
+//	}
+//
+//	public String getDownUrl() {
+//		return this.downurl;
+//	}
 
 	public void setPic(String pic) {
 		this.pic = pic;
@@ -95,13 +106,13 @@ public class PlayItemEntity extends BaseEntity {
 	}	
 	
 	
-	public void setSrc(String s) {
-		this.src = s;
-	}
-
-	public String getSrc() {
-		return this.src;
-	}		
+//	public void setSrc(String s) {
+//		this.src = s;
+//	}
+//
+//	public String getSrc() {
+//		return this.src;
+//	}		
 	
 	
 	

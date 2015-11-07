@@ -3,6 +3,7 @@ package children.lemoon.player.org;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.text.Collator;
@@ -11,6 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
  
 import com.dd.database.DatabaseManager;
@@ -26,7 +28,9 @@ import children.lemoon.music.PlayerService.MyReceiver;
 import children.lemoon.music.util.MediaUtil;
 import children.lemoon.myrespone.PlayItemEntity;
 import children.lemoon.myrespone.ResponePList;
+import children.lemoon.myrespone.UrlInfoEntry;
 import children.lemoon.reqbased.BaseReqActivity;
+import children.lemoon.reqbased.entry.ExtraEntry;
 import children.lemoon.reqbased.entry.ResHeadAndBody;
 import children.lemoon.reqbased.entry.ResponsePager;
 import children.lemoon.reqbased.utils.HttpManger;
@@ -52,6 +56,7 @@ import android.graphics.Color;
 
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -87,10 +92,13 @@ import android.widget.Toast;
 public class Player extends BaseReqActivity  {
 	private MySurfaceView mSurfaceView;
 	//private SurfaceHolder mHolder;
+	HashMap<String, String> mUaMap = new HashMap<String,String>();
+	
 	private MediaPlayer mPlayer = null;
 
 	int m_times = 0;
 	private String mPlayPath = null;
+	
 	private Context mContext = null;
 	final String TAG = "VideoViewPlayer";
 	private boolean needResume;
@@ -100,7 +108,6 @@ public class Player extends BaseReqActivity  {
 	final int EVENT_CLICK = 1;
 	final int FLOWCOUNT = 3;
 
-	final int CMD_PLAY_PURL = 2000;
 	final int CMD_REFRESH_SEEKBAR = 2001;
  
 	private boolean isIdle = true;
@@ -137,11 +144,6 @@ public class Player extends BaseReqActivity  {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-
-			case CMD_PLAY_PURL:
-				String purl = (String) msg.getData().get("purl");
-				myPlay(purl);
-				break;
 
 			case CMD_REFRESH_SEEKBAR:
 				if (mPlayer == null || mDuration == 0)
@@ -243,7 +245,7 @@ public class Player extends BaseReqActivity  {
 		switch(id){
 		case DLG_ITEM1:
 			CustomProgressDialog dlg = CustomProgressDialog.createDialog(this);
-			dlg.setMessage("加载中 (*≧▽≦*)");
+			dlg.setMessage(getResources().getString(R.string.default_loading_txt));
 			return dlg; 
 		}
 		return super.onCreateDialog(id);
@@ -283,7 +285,7 @@ public class Player extends BaseReqActivity  {
 		if(mPlayPath!=null && !mPlayPath.isEmpty()){
 			mRunMode = Configer.RunMode.MODE_DIRECT;
 			mMvTitle.setText(mPlayPath); 
-			myPlay(mPlayPath);
+			myPlay(mPlayPath, "");
 			return;
 		}
 		
@@ -424,7 +426,7 @@ public class Player extends BaseReqActivity  {
 		}); 
 		
 		mLoading = CustomProgressDialog.createDialog(this);
-		mLoading.setMessage("加载中 (*≧▽≦*)");
+		mLoading.setMessage(getResources().getString(R.string.default_loading_txt));
 		mLoading.show();	
 		
 		//集组显示
@@ -794,7 +796,13 @@ public class Player extends BaseReqActivity  {
 						
 						PlayItemEntity pie = new PlayItemEntity();
 						pie.setName(name);
-						pie.setDownUrl(mCurLocalPath+name);
+						
+						List<UrlInfoEntry> ulist = new ArrayList<UrlInfoEntry>();
+						UrlInfoEntry u = new UrlInfoEntry();
+						u.setUrl(mCurLocalPath+name);
+						ulist.add(u);
+						pie.setUrlList(ulist);
+						//pie.setDownUrl(mCurLocalPath+name);
 						mData.add(pie);
 					}		
 					mBfirstData = false;
@@ -848,6 +856,16 @@ public class Player extends BaseReqActivity  {
 		}
  
 		ResHeadAndBody rslt = (ResHeadAndBody) data;
+		
+		if(mUaMap.size() == 0){
+			List<ExtraEntry> extra = rslt.getHeader().getExtra();
+			if(extra != null && extra.size()>0){
+				for(ExtraEntry en : extra){
+					Logger.LOGD("++extra: "+ en.getKey()+", "+en.getValue());
+					mUaMap.put(en.getKey(), en.getValue());
+				}
+			}
+		}
 
 		// gson 将请求的数据，转为了ResponePList数据类型
 		ResponePList plist = (ResponePList) rslt.getBody();
@@ -975,6 +993,7 @@ public class Player extends BaseReqActivity  {
 	
 	
 	// ------------------- player control ---------------------
+	int mPlayingIdx = 0;
 	public void myPlay(int curClickPos){
 		if(curClickPos == -1)
 			curClickPos = 0;
@@ -983,15 +1002,26 @@ public class Player extends BaseReqActivity  {
 		
 		
 		String purl = null;
+		String src ="";
 		PlayItemEntity pie = mData.get(curClickPos);
 		if(mRunMode == Configer.RunMode.MODE_LOCAL){
-			purl = pie.getDownUrl();
+			//purl = pie.getDownUrl();
+			try{
+				purl = pie.getUrlList().get(0).getUrl();
+			}
+			catch(Exception e){
+				purl = "";
+			}
 //			if(purl != null)
 //				purl = URLEncoder.encode(purl);
 		}
 		else{
 			long ts = System.currentTimeMillis();
-			purl = Configer.initUrl(Configer.REQ_PLAYURL)+ pie.getIds()+"/"+URLEncoder.encode(pie.getSrc())+"/"+ts+"/"+ MyUtil.getSign(ts) ;
+			UrlInfoEntry u = pie.getUrlList().get(mPlayingIdx);
+			src = URLEncoder.encode(u.getSrc());
+			String idx = u.getUrl();
+			
+			purl = Configer.initUrl(Configer.REQ_PLAYURL)+ pie.getIds()+"/"+src+"/"+idx+"/"+ts+"/"+ MyUtil.getSign(ts) ;
 		}
 
 		if (purl == null ||  (mPlayPath != null && mPlayPath.compareTo(purl) == 0) )
@@ -999,10 +1029,10 @@ public class Player extends BaseReqActivity  {
 		
 		
 		mPlayPath = purl;
-		myPlay(mPlayPath);
+		myPlay(mPlayPath, src);
 	}
 	
-	public void myPlay(String url) {
+	public void myPlay(String url, String src) {
 		if (url == null || url.length() == 0) {
 			Toast.makeText(mContext, "无播放地址", Toast.LENGTH_SHORT).show();
 			return;
@@ -1011,7 +1041,7 @@ public class Player extends BaseReqActivity  {
 		if(!mLoading.isShowing())
 			mLoading.show();
 		mPlayPath = url;
-		Logger.LOGD(TAG, "begin to play:" + mPlayPath);
+		Logger.LOGD(TAG, "begin to play:" + mPlayPath + ", "+ src);
 
 		if (mPlayer == null) {
 			Logger.LOGD(TAG, "mPlayer is null!!");
@@ -1021,7 +1051,32 @@ public class Player extends BaseReqActivity  {
 			Logger.LOGD(TAG, "-=-=-=-=-=-= -=-=-reset-=--= -=-==-");
 			mPlayer.reset();
 			mPlayer.stop();
-			mPlayer.setDataSource(url); 
+			
+			Logger.LOGD("mUaMap.size= "+ mUaMap.size() +", value: "+ mUaMap.get(src));
+			if(mUaMap.get(src)!= null){
+				Logger.LOGD("=== had  headers ====");
+				Map<String, String> headers = new HashMap<String,String>(); 
+				
+				String headinfo = mUaMap.get(src);
+				String[] grp = headinfo.split("\\$\\$");
+				if(grp!=null){
+					Logger.LOGD("grp size:"+grp.length);
+					for(String items:grp){
+						String[] item = items.split("\\:");
+						Logger.LOGD("item size:"+item.length);
+						
+						if(item!=null && item.length==2){
+							Logger.LOGD("Add header: "+ item[0]+"="+item[1]);
+							headers.put(item[0], item[1]);
+						}
+					}
+				}
+				
+				mPlayer.setDataSource(Player.this, Uri.parse(url), headers);
+			}
+			else{
+				mPlayer.setDataSource(url);
+			}
 			mPlayer.prepareAsync();
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
@@ -1098,7 +1153,6 @@ public class Player extends BaseReqActivity  {
 		@Override
 		public void onCompletion(MediaPlayer player) {
 			Logger.LOGD("Play Over:::", "onComletion called");
-			//myPlay(mPlayPath);
 			if(mRunMode != Configer.RunMode.MODE_DIRECT){
 				next(true);
 			}

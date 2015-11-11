@@ -10,6 +10,15 @@ public class ResponeResList extends BaseEntity {
 	
 	private List<PlayItemEntity> resList;
 	private List<HeaderItemEntity> headerList;
+	private String title;
+	
+	public void setTitle(String s){
+		title = s;
+	}
+	
+	public String getTitle(){
+		return title;
+	}
 	
 	
 	public List<PlayItemEntity> getResList() {

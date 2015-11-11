@@ -77,7 +77,7 @@ public class Configer {
 	// rocking debug !!!!!!!!!!!
 	public static String initUrl(int paramInt) {
 		String prefix = "http://www.nybgjd.com/erge/";
-		//prefix = "http://172.16.2.3/frw/erge.php?/erge/";
+		//prefix = "http://172.16.2.8/frw/erge.php?/erge/";
 		String rt = null;
 		switch (paramInt) // ok
 		{
@@ -99,11 +99,9 @@ public class Configer {
 			rt = "http://www.nybgjd.com/misc/livesrc/childcatedata.json";
 			break;			
 		case REQ_VIDEO_PLAYLIST:
-			//rt = "http://10.0.2.2/ci/erge.php/erge/api/getPL/";
 			rt = prefix + OEM_NAME+"/getPL/";
 			break;
 		case REQ_AUDIO_PLAYLIST:
-			//rt = "http://10.0.2.2/ci/erge.php/erge/api/getPL/a/";
 			rt = prefix + OEM_NAME+"/getPL/";
 			break;			
 		}

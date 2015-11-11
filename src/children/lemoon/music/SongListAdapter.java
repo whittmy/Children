@@ -66,11 +66,14 @@ public class SongListAdapter extends BaseAdapter {
 		holder1 = (Holder) v.getTag();
 		holder1.title.setText(data.get(paramInt).getName());
 		
+		//listview 选中条目时 文字滚动效果。
 		if(paramInt == context.getCurPos()){
 			holder1.title.setTextColor(Color.rgb(255, 255, 0));
+			holder1.title.setSelected(true);
 		}
 		else{
 			holder1.title.setTextColor(Color.rgb(255, 255, 255));
+			holder1.title.setSelected(false);
 		}
 		
 		return v;

@@ -16,6 +16,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -60,6 +61,7 @@ import com.android.volley.toolbox.Volley;
 import com.dd.database.DatabaseManager;
 import com.dd.database.QueryExecutor;
 import com.dd.my.CateCourseMgrDAO;
+import com.devsmart.android.StringUtils;
 import com.devsmart.android.ui.HorizontalListView;
 import com.devsmart.android.ui.HorizontalListView.OnScrollListener;
 import com.handmark.pulltorefresh.library.PullToRefreshBase;
@@ -84,6 +86,7 @@ import children.lemoon.reqbased.utils.MyUtil;
 import children.lemoon.ui.loading.CustomProgressDialog;
 import children.lemoon.ui.view.BatteryImgView;
 import children.lemoon.ui.view.BatteryRcvBindView;
+import children.lemoon.utils.HttpUtil;
 import children.lemoon.utils.Logger;
 import children.lemoon.utils.NetworkUtils;
 import children.lemoon.utils.download.DownloadManagerPro;
@@ -299,8 +302,8 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		//this.prvMovieList.setOnFooterRefreshListener(this);
 		
 		//取参数
-		String str = getIntent().getStringExtra("curCata");
-		this.cataName.setText(str);
+//		String str = getIntent().getStringExtra("curCata");
+//		this.cataName.setText(str);
 		this.cataTypeId = getIntent().getIntExtra("cataId", 0);
 
 		
@@ -314,10 +317,52 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		queryMovies();
 	}
  
+
+	static public class CallBacker_RedirectUrl {
+		private ICall mCaller;
+		String mUrl = null;
+		Handler handler = new Handler(){
+			public void handleMessage(Message msg) {
+				switch(msg.what){
+				case 0:
+					if(mCaller != null)
+						mCaller.onFinish(mUrl);
+					break;
+				}
+			};
+		};
+		
+		public interface ICall{
+			public void onFinish(String rslt);
+		}
+		
+		
+		public CallBacker_RedirectUrl(String url){
+			mUrl = HttpUtil.encodeGB(url);
+		}
+		
+		public CallBacker_RedirectUrl setCallBack(ICall i){
+			mCaller = i;
+			return this;
+		}
+		
+		public void Act(){
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					HttpUtil.getRedirectUrl(mUrl, null, null, 3);
+					handler.sendEmptyMessage(0);
+				}
+			}).start();
+
+		}
+	}
+	
  
 	public void onItemClick(AdapterView<?> paramAdapterView, View paramView, int paramInt, long paramLong) {
 		Adapter adp1 =  paramAdapterView.getAdapter();
-		PlayItemEntity pie = (PlayItemEntity)adp1.getItem(paramInt);
+		final PlayItemEntity pie = (PlayItemEntity)adp1.getItem(paramInt);
 		
 		if (!NetworkUtils.isNetworkAvailable(getApplicationContext())) {
 			Toast.makeText(getApplicationContext(), "当前网络不可用", Toast.LENGTH_SHORT).show();
@@ -350,7 +395,7 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 			//课件
 			final String courseid = pie.getIds();
 			HScrollAdapter adp = (HScrollAdapter)adp1;
-			String idstr = String.valueOf(courseid);
+			final String idstr = String.valueOf(courseid);
 
 			File f = Environment.getExternalStoragePublicDirectory(DOWNLOAD_FOLDER_NAME);
 			if(!f.exists())
@@ -375,47 +420,57 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	     			
 		            //开始下载   
 	     			List<UrlInfoEntry> ulist = pie.getUrlList();
-	     			String src = "";
-	     			String idx = "";
-	     			if(ulist!=null && ulist.size()>0){
-	     				src = ulist.get(0).getSrc();	//这里就默认处理第一源了，不管那么多了
-	     				idx = ulist.get(0).getUrl();
-	     			}
+	     			String src = "link";
+	     			String idx = "0";
+//	     			if(ulist!=null && ulist.size()>0){
+//	     				src = ulist.get(0).getSrc();	//这里就默认处理第一源了，不管那么多了
+//	     				idx = ulist.get(0).getUrl();
+//	     			}
 
 	     			long ts = System.currentTimeMillis();
 	     			String url =  Configer.initUrl(Configer.REQ_PLAYURL)+ pie.getIds()+"/"+src+"/"+idx+"/"+ts+"/"+ MyUtil.getSign(ts) ;
 
-		            Uri resource = Uri.parse(encodeGB(/*pie.getDownUrl()*/url));   
-		            DownloadManager.Request request = new DownloadManager.Request(resource);   
-		            request.setAllowedNetworkTypes(Request.NETWORK_MOBILE | Request.NETWORK_WIFI);   
-		            request.setAllowedOverRoaming(false);   
-	 
-		            //不在通知栏中显示   
-		            request.setShowRunningNotification(false);  
-		            request.setVisibleInDownloadsUi(false);  
-		            
-		            //sdcard的目录下的 某文件夹  
-		            request.setDestinationInExternalPublicDir(DOWNLOAD_FOLDER_NAME, idstr);  
-		            request.setTitle(pie.getName());   
-		            final long downloadId  = mDlMgr.enqueue(request);  
-		            v1.setTag(downloadId);
-		            
-		            PreferencesUtils.putString(getApplicationContext(), "dl_"+downloadId, courseid);  //方便downloadid=>couseid
-		            
-		            //保存数据库
-		            DatabaseManager.getInstance().executeQuery(new QueryExecutor() {
-						@Override
-						public void run(SQLiteDatabase database) {
-							// TODO Auto-generated method stub
-							CateCourseMgrDAO udao = new CateCourseMgrDAO(database, MoviesGridActivity.this); // your class
-							udao.insert(courseid, downloadId);
-							
-				            mCourseAndDownIdMap.put(courseid, downloadId);
-				            mDownIdAndViewMap.put(downloadId, v1);
-						}
-		            });
+	     			Logger.LOGD("downurl:"+url);
 
-	                updateView(downloadId);
+	     			new CallBacker_RedirectUrl(url).setCallBack(new CallBacker_RedirectUrl.ICall() {
+						@Override
+						public void onFinish(String rslt) {
+							// TODO Auto-generated method stub
+				            Uri resource = Uri.parse(HttpUtil.encodeGB(rslt));   
+				            DownloadManager.Request request = new DownloadManager.Request(resource);   
+				            request.setAllowedNetworkTypes(Request.NETWORK_MOBILE | Request.NETWORK_WIFI);   
+				            request.setAllowedOverRoaming(false);   
+			 
+				            //不在通知栏中显示   
+				            request.setShowRunningNotification(false);  
+				            request.setVisibleInDownloadsUi(false);  
+				            
+				            //sdcard的目录下的 某文件夹  
+				            request.setDestinationInExternalPublicDir(DOWNLOAD_FOLDER_NAME, idstr);  
+				            request.setTitle(pie.getName());   
+				            final long downloadId  = mDlMgr.enqueue(request);  
+				            v1.setTag(downloadId);
+				            
+				            PreferencesUtils.putString(getApplicationContext(), "dl_"+downloadId, courseid);  //方便downloadid=>couseid
+				            
+				            //保存数据库
+				            DatabaseManager.getInstance().executeQuery(new QueryExecutor() {
+								@Override
+								public void run(SQLiteDatabase database) {
+									// TODO Auto-generated method stub
+									CateCourseMgrDAO udao = new CateCourseMgrDAO(database, MoviesGridActivity.this); // your class
+									udao.insert(courseid, downloadId);
+									
+						            mCourseAndDownIdMap.put(courseid, downloadId);
+						            mDownIdAndViewMap.put(downloadId, v1);
+								}
+				            });
+
+			                updateView(downloadId);
+						}
+					}).Act();
+	     			
+
 	    		}				
 			}
 			else
@@ -466,29 +521,6 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 	}
 
  
-	
-	/** 
-     * 如果服务器不支持中文路径的情况下需要转换url的编码。 
-     * @param string 
-     * @return 
-     */  
-    public String encodeGB(String string)  
-    {  
-        //转换中文编码  
-        String split[] = string.split("/");  
-        for (int i = 1; i < split.length; i++) {  
-            try {  
-                split[i] = URLEncoder.encode(split[i], "GB2312");  
-            } catch (UnsupportedEncodingException e) {  
-                e.printStackTrace();  
-            }  
-            split[0] = split[0]+"/"+split[i];  
-        }  
-        split[0] = split[0].replaceAll("\\+", "%20");//处理空格  
-        return split[0];  
-    }  
-	
-
 	  
 	LinkedList<HorizontalListView> mHlistArr = new LinkedList<HorizontalListView>(); 
 	LinkedList<HScrollAdapter> mHAdpArr = new LinkedList<HScrollAdapter>();
@@ -500,6 +532,14 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 		else if (paramInt1 == Configer.REQ_TYPE_CATEINFO) {
 			ResHeadAndBody localResHeadAndBody = (ResHeadAndBody) paramObject1;
 			ResponeResList list = (ResponeResList) localResHeadAndBody.getBody();
+			
+			
+			if(!list.getTitle().isEmpty()){
+				cataName.setText(list.getTitle());
+			}
+			else if(cataName.getText().length() == 0){
+				this.cataName.setText(getIntent().getStringExtra("curCata"));
+			}
 			
 			//先刷新全部的
 			if((list.getResList()!=null && list.getResList().size() > 0)){

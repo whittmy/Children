@@ -230,36 +230,9 @@ public class Player extends BaseReqActivity  {
 //            mWakeLock.release();  
 //        }  
 //    }  
-	
-	
-	
+ 
 	private BatteryRcvBindView batteryReceiver;
-	
-	
-	//showDialog(DLG_ITEM1);
-	static final int DLG_ITEM1 = 1;
-	@Override
-	@Deprecated
-	protected Dialog onCreateDialog(int id) {
-		// TODO Auto-generated method stub
-		switch(id){
-		case DLG_ITEM1:
-			CustomProgressDialog dlg = CustomProgressDialog.createDialog(this);
-			dlg.setMessage(getResources().getString(R.string.default_loading_txt));
-			return dlg; 
-		}
-		return super.onCreateDialog(id);
-	}
-
-	@Override
-	@Deprecated
-	protected void onPrepareDialog(int id, Dialog dialog) {
-		// TODO Auto-generated method stub
-		super.onPrepareDialog(id, dialog);
-		
-	}
-	
-	
+ 
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
@@ -453,6 +426,7 @@ public class Player extends BaseReqActivity  {
 				// TODO Auto-generated method stub
 				Logger.LOGD("", "=================== onitemclick :"+ arg2);
  				((HorizontalScrollViewAdapter)arg0.getAdapter()).notifyDataSetChanged();
+ 				mPlayingIdx = 0;
 				myPlay(arg2);
 			}
 		});
@@ -574,6 +548,8 @@ public class Player extends BaseReqActivity  {
 	}
 	
 	private void next(boolean bplay){
+		Logger.LOGD("fun ...... next...");
+		mPlayingIdx = 0;
 		if(mRunMode == Configer.RunMode.MODE_NETWORK){
 			if (mAdapter.getCount() - mHListView.getClickPos()  < 12) {  //这儿与onscroll事件是有些不一样的哦
 				Logger.LOGD("", "!!!!!! begin to load pg: " + (mCurPg + 1));
@@ -583,8 +559,13 @@ public class Player extends BaseReqActivity  {
 		
 		if(bplay){
 			int pos = mHListView.getClickPos() + 1; 
-			if(pos >= mData.size() || mAdapter==null)
+			if(mAdapter == null || mData.size()==0 ){
+				onExitProc();
 				return;
+			}
+			if(pos >= mData.size()){
+				pos = 0;
+			}
 			mHListView.setClickPos(pos);
  
 			int setgrppos = (int) (Math.ceil((pos*1f)/PAGE_SIZE)-1);
@@ -709,35 +690,52 @@ public class Player extends BaseReqActivity  {
 		System.exit(0);
 	}
 
-//	public class FileNameSelector implements FilenameFilter{
-//		@Override
-//		public boolean accept(File arg0, String arg1) {
-//			// TODO Auto-generated method stub
-//			arg1 = arg1.toLowerCase();
-//			
-//			
-//			if(arg1.endsWith("mp3")
-//				|| arg1.endsWith("wma")
-//				|| arg1.endsWith("wav")
-//				|| arg1.endsWith("mod")
-//				|| arg1.endsWith("cd")
-//				|| arg1.endsWith("md")
-//				|| arg1.endsWith("asf")
-//				|| arg1.endsWith("aac")
-//				|| arg1.endsWith("mp3pro")
-//				|| arg1.endsWith("vqf")
-//				|| arg1.endsWith("flac")
-//				|| arg1.endsWith("ape")
-//				|| arg1.endsWith("mid")
-//				|| arg1.endsWith("ogg")
-//				|| arg1.endsWith("m4a")
-//				|| arg1.endsWith("aac+")
-//				|| arg1.endsWith("aiff")
-//				|| arg1.endsWith("vqf"))
-//				return true;
-//			return false;
-//		}
-//	}
+	public class FileNameSelector implements FilenameFilter{
+		@Override
+		public boolean accept(File arg0, String arg1) {
+			// TODO Auto-generated method stub
+			arg1 = arg1.toLowerCase();
+			if(arg1.endsWith("mpeg")
+				    ||arg1.endsWith("ra")
+				    ||arg1.endsWith("mp4")
+				    ||arg1.endsWith("qt")
+				    ||arg1.endsWith("avi")
+				    ||arg1.endsWith("f4v")
+				    ||arg1.endsWith("m2v")
+				    ||arg1.endsWith("divx")
+				    ||arg1.endsWith("mpeg4")	
+				    ||arg1.endsWith("ogm")
+				    ||arg1.endsWith("ask")
+				    ||arg1.endsWith("ts")     
+				    ||arg1.endsWith("mpg")            
+				    ||arg1.endsWith("rm")             
+				    ||arg1.endsWith("flv")            
+				    ||arg1.endsWith("asf")            
+				    ||arg1.endsWith("3gp")            
+				    ||arg1.endsWith("m4v")            
+				    ||arg1.endsWith("dat")             
+				    ||arg1.endsWith("vob")            
+				    ||arg1.endsWith("mpe")            
+				    ||arg1.endsWith("m2ts")            
+				    ||arg1.endsWith("trp")
+				    ||arg1.endsWith("dat")                    
+				    ||arg1.endsWith("rmvb")                   
+				    ||arg1.endsWith("mov")                    
+				    ||arg1.endsWith("wmv")                    
+				    ||arg1.endsWith("mkv")                    
+				    ||arg1.endsWith("m4p")                    
+				    ||arg1.endsWith("xvid")                   
+				    ||arg1.endsWith("mpv")                    
+				    ||arg1.endsWith("mlv")                    
+				    ||arg1.endsWith("mts")                    
+				    ||arg1.endsWith("tp"))
+			{
+				 return true;
+			}
+			
+			return false;
+		}
+	}
 	
 	
 	boolean mBfirstData = true;
@@ -754,22 +752,8 @@ public class Player extends BaseReqActivity  {
 					mData.clear();
 					mCurPg = 0;
 				
-					HashMap<String, Integer> extSets = new HashMap<String, Integer>();
-					extSets.put("mpeg", 1);			extSets.put("mpg", 1);			extSets.put("dat", 1);
-					extSets.put("ra", 1);			extSets.put("rm", 1);			extSets.put("rmvb", 1);
-					extSets.put("mp4", 1);			extSets.put("flv", 1);			extSets.put("mov", 1);
-					extSets.put("qt", 1);			extSets.put("asf", 1);			extSets.put("wmv", 1);
-					extSets.put("avi", 1);			extSets.put("3gp", 1);			extSets.put("mkv", 1);
-					extSets.put("f4v", 1);			extSets.put("m4v", 1);			extSets.put("m4p", 1);
-					extSets.put("m2v", 1);			extSets.put("dat", 1);			extSets.put("xvid", 1);
-					extSets.put("divx", 1);			extSets.put("vob", 1);			extSets.put("mpv", 1);
-					extSets.put("mpeg4", 1);		extSets.put("mpe", 1);			extSets.put("mlv", 1);
-					extSets.put("ogm", 1);			extSets.put("m2ts", 1);			extSets.put("mts", 1);
-					extSets.put("ask", 1);			extSets.put("trp", 1);			extSets.put("tp", 1);
-					extSets.put("ts", 1);
-					
 					File f = new File(mCurLocalPath);
-					File[] l = f.listFiles();			//f.list(new FileNameSelector());
+					File[] l = f.listFiles(new FileNameSelector());	
 					if(l == null){
 						//Toast.makeText(this, mCurLocalPath+ " 目录下没有内容", Toast.LENGTH_SHORT).show();
 						onExitProc();
@@ -788,12 +772,7 @@ public class Player extends BaseReqActivity  {
 						int pos = name.lastIndexOf(".");
 						if(pos < 0 || (pos>=(name.length()-1)))
 							continue;
-						 
-						String ext = name.substring(pos+1).toLowerCase();
-						if(extSets.get(ext) == null)
-							continue;
-					 
-						
+
 						PlayItemEntity pie = new PlayItemEntity();
 						pie.setName(name);
 						
@@ -994,9 +973,12 @@ public class Player extends BaseReqActivity  {
 	
 	// ------------------- player control ---------------------
 	int mPlayingIdx = 0;
+	int mCurClickPos = 0;
 	public void myPlay(int curClickPos){
 		if(curClickPos == -1)
 			curClickPos = 0;
+		
+		mCurClickPos = curClickPos;
 		if(mData==null || curClickPos>=mData.size())
 			return;
 		
@@ -1050,7 +1032,7 @@ public class Player extends BaseReqActivity  {
 		try {
 			Logger.LOGD(TAG, "-=-=-=-=-=-= -=-=-reset-=--= -=-==-");
 			mPlayer.reset();
-			mPlayer.stop();
+			//mPlayer.stop();
 			
 			Logger.LOGD("mUaMap.size= "+ mUaMap.size() +", value: "+ mUaMap.get(src));
 			if(mUaMap.get(src)!= null){
@@ -1132,7 +1114,7 @@ public class Player extends BaseReqActivity  {
 	MediaPlayer.OnErrorListener mErrorListener = new MediaPlayer.OnErrorListener() {
 		@Override
 		public boolean onError(MediaPlayer player, int whatError, int extra) {
-			Logger.LOGD(TAG, "onError called: " + (System.currentTimeMillis() - mKeyEvent_tm));
+			Logger.LOGD(TAG, "onError called: " + "("+whatError+","+extra+")");
 			if(mRunMode == Configer.RunMode.MODE_DIRECT && whatError!=-38){
 				onExitProc();
 				return true;
@@ -1142,8 +1124,18 @@ public class Player extends BaseReqActivity  {
 			case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
 				// initPlayer();
 				Logger.LOGD("Play Error:::", "MEDIA_ERROR_SERVER_DIED");
+				onExitProc();
 				break;
 			default:
+				PlayItemEntity pie = mData.get(mCurClickPos);
+				if(pie.getUrlList()!=null && ((mPlayingIdx+1)<pie.getUrlList().size())){
+					Logger.LOGD("begin to alter source");
+					mPlayingIdx++;
+					myPlay(mCurClickPos);
+				}
+				else{
+					next(true);
+				}
 				break;
 			}
 			return true;

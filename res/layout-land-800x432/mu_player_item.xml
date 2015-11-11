@@ -15,6 +15,10 @@
         android:paddingLeft="0dp"
         android:paddingRight="0dp"
         android:duplicateParentState="true"
+
+        android:focusableInTouchMode="true"
+ 	    android:ellipsize="marquee" 
+        android:marqueeRepeatLimit="marquee_forever" 
         
         />
 	<!-- item点击后的文字颜色变换 只能通过adpater

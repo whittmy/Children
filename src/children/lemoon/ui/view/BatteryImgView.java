@@ -124,7 +124,13 @@ public class BatteryImgView extends ImageView {
 		
 		paint.setStrokeWidth(1f);
 		paint.setStyle(Paint.Style.STROKE);
-		paint.setColor(Color.rgb(255, 255, 255));
+
+		if(percent < 20 && !bCharging){
+			paint.setColor(Color.rgb(255, 0, 0));
+		}
+		else{
+			paint.setColor(Color.rgb(255, 255, 255));
+		}	
 		canvas.drawRoundRect(rt_body, 2, 2, paint);
  
 		//header
@@ -136,7 +142,14 @@ public class BatteryImgView extends ImageView {
  		float head_bottom = head_top+h_header;
  		RectF rt_header = new RectF(head_left, head_top, head_right, head_bottom); //左上右下
  		
-		paint.setColor(Color.rgb(255, 255, 255));
+
+		if(percent < 20 && !bCharging){
+			paint.setColor(Color.rgb(255, 0, 0));
+		}
+		else{
+			paint.setColor(Color.rgb(255, 255, 255));
+		}			
+
 		paint.setStyle(Paint.Style.FILL);
 		canvas.drawRoundRect(rt_header, 2, 2, paint);
  

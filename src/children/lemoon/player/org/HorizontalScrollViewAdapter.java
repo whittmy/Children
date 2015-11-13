@@ -119,6 +119,9 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		else if(!isEmtpy(mPic)){
 			mLoader.get(mPic, imageListener);
 		}
+		else{
+			mLoader.get("", imageListener);
+		}
 		//mLoader.get(isEmtpy(pie.getPic())?"": pie.getPic(), imageListener);
 		
 		

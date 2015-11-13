@@ -17,6 +17,7 @@ import children.lemoon.utils.Logger;
 
 import com.google.gson.Gson;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -30,12 +31,25 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipOutputStream;
+
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.util.EntityUtils;
 
 //import lib.runningman.RunningMan;
 
 
 public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
+	String TAG = "HttpTask";
 	Map<String, Object> bodyRequest;
 	private boolean cache;
 	private Context context;
@@ -51,7 +65,6 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 	private String url = "";
 	private HttpURLConnection urlConnDownLoad;
 
-//	private RunningMan mRunMan;
 	private static int[] request_method = null;
 	private boolean bshowLoading;
 
@@ -81,27 +94,23 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 		this.isZip = bzip;
 
 		bshowLoading = showLoading;
-//		if (context != null)
-//			mRunMan = new RunningMan(context);
 	}
 
 	/*
 	 * 两种请求方式： get/post
 	 */
+	/*
 	protected Message doInBackground(RequestMethod... param) {
-		URL ur = null; // v12
-		String resp = ""; // v10
+		URL ur = null;
+		String resp = ""; 
 		
 		long bgtm = System.currentTimeMillis();
 		try {
 			ur = new URL(url);
-
-			// goto0
 			int s = request_method()[param[0].ordinal()];
 			switch (s) {
-			case 1: // switch0 get
-				BufferedReader reader = null; // reader
-				
+			case 1: 
+				BufferedReader reader = null; 
 				// + retry
 				for(int retries=0; retries < 3; retries++){
 					boolean bok = false;
@@ -112,22 +121,20 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 						URL getRequestUrl = new URL(url + requestParam);
 						Logger.LOGE("Request", getRequestUrl.toString());
 						urlConnDownLoad = (HttpURLConnection) getRequestUrl.openConnection();
-						urlConnDownLoad.setConnectTimeout(15000);
+						urlConnDownLoad.setConnectTimeout(3000);	//连接时间尽可能短，其仅仅代表ip通与不通的问题，没必要在其上面浪费时间
 						urlConnDownLoad.setReadTimeout(15000);
 						urlConnDownLoad.setInstanceFollowRedirects(true);
 						urlConnDownLoad.connect();
 						reader = new BufferedReader(new InputStreamReader(urlConnDownLoad.getInputStream()));// v8
 
-						String str = null; // v11
-						// goto2
+						String str = null; 
 						while ((str = reader.readLine()) != null) {
-							// cond1
 							resp += str;
 						}
 						responseResult = resp;
 						
-//						reader.close();
-//						urlConnDownLoad.disconnect();	
+						reader.close(); reader = null;
+						urlConnDownLoad.disconnect(); urlConnDownLoad = null;	
 						bok = true;
 					}
 					catch (MalformedURLException e) {
@@ -163,7 +170,6 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 					}
 					catch(Exception e){}
 				}
-				// go goto1
 				return null;
 
 			case 2: // swich1 post
@@ -185,22 +191,18 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 						zipOut.close();
 					}
 
-					// cond2 / goto4
 					outDown.flush();
 					outDown.close();
 
 					InputStream inputStream = urlConnDownLoad.getInputStream(); // v5
 					int code = urlConnDownLoad.getResponseCode();
 					if (code != 0xc8) {
-						// cond0
 						return null;
 					}
 
 					BufferedReader breader = new BufferedReader(new InputStreamReader(inputStream));
 					String str = null;
-					// goto_5
 					while ((str = breader.readLine()) != null) {
-						// cond3
 						resp += str;
 					}
 
@@ -222,33 +224,124 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 		} catch (MalformedURLException e) {
 
 		}
-		// cond0/goto1
+		return null;
+	}
+	*/
+
+	///>>>>>>>>>>
+	private boolean mIsCancle = false;
+	private HttpGet mGet;
+	private HttpClient mHttp;
+	
+	protected Message doInBackground(RequestMethod... param) {
+		// 请求数据
+		String resp = ""; 
+		
+		int s = request_method()[param[0].ordinal()];
+		switch (s) {
+		case 1: //GET
+			String requestParam = null;
+			try {
+				requestParam = "?header=" + URLEncoder.encode(jsonObjectHeader, "utf-8") + "&body=" + URLEncoder.encode(jsonObjectBody, "utf-8");
+			} catch (UnsupportedEncodingException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+				return null;
+			}  
+			
+			BufferedReader reader = null;
+			mGet = initHttpGet(url + requestParam);
+			mHttp = initHttp();
+			try {
+				HttpResponse response = mHttp.execute(mGet);
+				if (mIsCancle) {
+					return null;
+				}
+				if (response != null) {
+					if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+						Logger.LOGD(TAG, "the code is :" + response.getStatusLine().getStatusCode());
+						return null;
+					}
+					
+					//String strResult = EntityUtils.toString(response.getEntity());
+					InputStream is = response.getEntity().getContent();  
+			        Header contentEncoding = response.getFirstHeader("Content-Encoding");  
+		            if (contentEncoding != null  
+		                    && contentEncoding.getValue().equalsIgnoreCase("gzip")) {  
+		                is = new GZIPInputStream(new BufferedInputStream(is));  
+		            }  
+		            
+					reader = new BufferedReader(new InputStreamReader(is));
+
+					String str = null; 
+					while ((str = reader.readLine()) != null) {
+						resp += str;
+					}
+					responseResult = resp;
+					
+				}
+			} catch (ConnectTimeoutException e) {
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			finally {
+				if(reader != null){
+					try {
+						reader.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} 
+					reader = null;
+				}
+				mHttp.getConnectionManager().shutdown();
+			}			
+			
+			break;
+		}
+		
 		return null;
 	}
 
+	private HttpClient initHttp() {
+		HttpClient client = new DefaultHttpClient();
+		client.getParams().setIntParameter(HttpConnectionParams.SO_TIMEOUT, 15000); // 超时设置
+		client.getParams().setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT, 5000);// 连接超时
+		return client;
+	}
+
+	private HttpGet initHttpGet(String mUrl) {
+		HttpGet get = new HttpGet(mUrl);
+		//initHeader(get);
+		return get;
+	}
+
+	public boolean tryCancel() {
+		Logger.LOGD(TAG, "tryCanle is working");
+		mGet.abort();
+		mIsCancle = true;
+		mHttp.getConnectionManager().shutdown();
+		return true;
+	}
+	//<<<<<<<
 	protected void onPostExecute(Message paramMessage) {
 		super.onPostExecute(paramMessage);
 		this.paseUtil.parse(this.responseClass, this.url, this.requestType, this.responseResult, this.mHandler, this.context, this.cache, this.bodyRequest,
 				true);
-//		if (mRunMan != null) {
-//			mRunMan.hide();
-//			mRunMan.close();
-//		}
 	}
 
 	protected void onPreExecute() {
 		super.onPreExecute();
 		Gson localGson = new Gson();
-		// HashMap<Object, Object> localHashMap = new HashMap<Object, Object>();
-		// localHashMap.put("header", localGson.toJson(wrapHeader()));
-		// localHashMap.put("body", localGson.toJson(this.bodyRequest));
 		this.jsonObjectHeader = localGson.toJson(wrapHeader());
 		this.jsonObjectBody = localGson.toJson(this.bodyRequest);
  
 	}
 
 	public Map<String, String> wrapHeader() {
-		HashMap<String, String> localHashMap = new HashMap<String, String>();
+		HashMap<String, String> headers = new HashMap<String, String>();
  		 int versionCode = DeviceUtil.getVersionCode(context);
  		 String timeStamp = TimeUtil.getTimeStamp();
  		 
@@ -268,11 +361,11 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
         
 		
 
-		 localHashMap.put("vercode", String.valueOf(versionCode));
-  		 localHashMap.put("reqtime", timeStamp);
-		 localHashMap.put("sign", MyUtil.getSign(Long.valueOf(timeStamp)));
-		 localHashMap.put("mac", DeviceUtil.getMacAddress());
-		 localHashMap.put("firmware", firmware);
-		return localHashMap;
+		 headers.put("vercode", String.valueOf(versionCode));
+  		 headers.put("reqtime", timeStamp);
+		 headers.put("sign", MyUtil.getSign(Long.valueOf(timeStamp)));
+		 headers.put("mac", DeviceUtil.getMacAddress());
+		 headers.put("firmware", firmware);
+		return headers;
 	}
 }

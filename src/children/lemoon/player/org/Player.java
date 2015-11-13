@@ -417,7 +417,7 @@ public class Player extends BaseReqActivity  {
 
 		
 		mHListView = (HorizontalListView) findViewById(R.id.id_horizontalScrollView);
-		mAdapter = new HorizontalScrollViewAdapter(this, mData);
+		mAdapter = new HorizontalScrollViewAdapter(this, mData, getIntent().getStringExtra("pic"));
 		mHListView.setAdapter(mAdapter);
 		
 		mHListView.setOnItemClickListener(new OnItemClickListener() {
@@ -1035,28 +1035,29 @@ public class Player extends BaseReqActivity  {
 			//mPlayer.stop();
 			
 			Logger.LOGD("mUaMap.size= "+ mUaMap.size() +", value: "+ mUaMap.get(src));
+			Map<String, String> headers = new HashMap<String,String>(); 
 			if(mUaMap.get(src)!= null){
 				Logger.LOGD("=== had  headers ====");
-				Map<String, String> headers = new HashMap<String,String>(); 
 				
 				String headinfo = mUaMap.get(src);
 				String[] grp = headinfo.split("\\$\\$");
 				if(grp!=null){
-					Logger.LOGD("grp size:"+grp.length);
 					for(String items:grp){
-						String[] item = items.split("\\:");
-						Logger.LOGD("item size:"+item.length);
-						
+						String[] item = items.split("\\:");						
 						if(item!=null && item.length==2){
 							Logger.LOGD("Add header: "+ item[0]+"="+item[1]);
 							headers.put(item[0], item[1]);
 						}
 					}
 				}
-				
+			}
+			
+			if(headers.size()>0){
+				Logger.LOGD("use header");
 				mPlayer.setDataSource(Player.this, Uri.parse(url), headers);
 			}
 			else{
+				Logger.LOGD("use no-header");
 				mPlayer.setDataSource(url);
 			}
 			mPlayer.prepareAsync();

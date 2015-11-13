@@ -20,7 +20,7 @@
 	        android:id="@+id/mv_selector_item_img"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-	        android:scaleType="centerCrop" 
+	        android:scaleType="fitXY" 
 	        android:focusable="false"/>        
         <ImageView 
             android:id="@+id/mv_selector_item_img_playing"

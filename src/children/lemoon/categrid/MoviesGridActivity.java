@@ -514,6 +514,7 @@ public class MoviesGridActivity extends BaseReqActivity implements View.OnClickL
 			
 			//网络
 			Intent it = new Intent(this, Player.class);
+			it.putExtra("pic", pie.getPic());
 			it.putExtra("cataId", pie.getIds());
 			it.putExtra("type", pie.getType());
 			startActivity(it);

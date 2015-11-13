@@ -31,12 +31,13 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 	private LinkedList<PlayItemEntity> mDatas;
 	Player mAct;
  
+	String mPic = null;
 	ImageLoader mLoader;
-	public HorizontalScrollViewAdapter(Context cx, LinkedList<PlayItemEntity> mDatas) {
+	public HorizontalScrollViewAdapter(Context cx, LinkedList<PlayItemEntity> mDatas, String pic) {
 		mInflater = LayoutInflater.from(cx);
 		this.mDatas = mDatas;
 		mAct = (Player)cx;
-		
+		mPic = pic;
 //		mLoader = ImageLoader.getInstance();
 //		File cacheDir = StorageUtils.getCacheDirectory(cx);
 //		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(cx)
@@ -111,7 +112,14 @@ public class HorizontalScrollViewAdapter extends BaseAdapter{
 		//mLoader.displayImage(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), viewHolder.mImg);
 		//Logger.LOGD("", "pos:"+position);
 		//mLoader.get(isEmtpy(pie.getPic())?"": (Configer.IMG_URL_PRE+pie.getPic()), imageListener);
-		mLoader.get(isEmtpy(pie.getPic())?"": pie.getPic(), imageListener);
+		
+		if(!isEmtpy(pie.getPic())){
+			mLoader.get(pie.getPic(), imageListener);
+		}
+		else if(!isEmtpy(mPic)){
+			mLoader.get(mPic, imageListener);
+		}
+		//mLoader.get(isEmtpy(pie.getPic())?"": pie.getPic(), imageListener);
 		
 		
 		if(mAct.mHListView.getClickPos() == position){

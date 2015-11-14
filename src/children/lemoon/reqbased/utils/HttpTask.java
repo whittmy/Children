@@ -250,6 +250,7 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 			}  
 			
 			BufferedReader reader = null;
+			Logger.LOGD(TAG, url + requestParam);
 			mGet = initHttpGet(url + requestParam);
 			mHttp = initHttp();
 			try {
@@ -307,8 +308,8 @@ public class HttpTask extends AsyncTask<RequestMethod, Integer, Message> {
 
 	private HttpClient initHttp() {
 		HttpClient client = new DefaultHttpClient();
-		client.getParams().setIntParameter(HttpConnectionParams.SO_TIMEOUT, 15000); // 超时设置
-		client.getParams().setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT, 5000);// 连接超时
+		client.getParams().setIntParameter(HttpConnectionParams.SO_TIMEOUT, 30000); // 超时设置
+		client.getParams().setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT, 15000);// 连接超时
 		return client;
 	}
 

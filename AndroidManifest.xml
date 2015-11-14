@@ -43,9 +43,12 @@
             </intent-filter>
         </activity>        
        
+        <!-- singleTask->singleTop
+        	解决主页键后，再进入其它分类时仍显示之前页面的问题
+         -->
         <activity 
             android:name="children.lemoon.categrid.MoviesGridActivity"
-            android:launchMode="singleTask"
+            android:launchMode="singleTop"
             android:screenOrientation="landscape"
             android:exported="true">
         </activity>

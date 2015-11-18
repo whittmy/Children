@@ -170,7 +170,7 @@ public class DeviceUtil {
 	         //执行命令cmd，只取结果中含有filter的这一行
 	         while ((line = br.readLine ()) != null && line.contains(filter)== false) {   
 	             //result += line;
-	             Logger.LOGD("test","line: "+line);
+	             //Logger.LOGD("test","line: "+line);
 	         }
 	          
 	         result = line;

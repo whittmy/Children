@@ -91,7 +91,6 @@ public class MuPlayer extends Activity {
 	CustomProgressDialog mLoading;
 	ExitDialog mExitDlg;
 	void initView() {
-		
 		mBatteryView = (BatteryImgView)findViewById(R.id.battery);
 		RelativeLayout mubg = (RelativeLayout) findViewById(R.id.mubg);
 		

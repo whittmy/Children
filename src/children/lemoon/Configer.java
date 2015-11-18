@@ -8,7 +8,7 @@ import android.graphics.drawable.Drawable;
 
 public class Configer {
 	public static  String OEM_NAME = "piapia_v3"; 
-	public static boolean _DEBUG = true;
+	public static boolean _DEBUG = false;
 	public static String COM_KEY = "@#xpia&*1452";
 	//public static String IMG_URL_PRE = "http://www.nybgjd.com/misc/story_res/images/";
 	

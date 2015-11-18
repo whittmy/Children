@@ -20,6 +20,8 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 
@@ -79,7 +81,7 @@ public class HttpManger {
 		this.httpTask = new HttpTask(requestType, this.mHandler, url, this.mContext, bodyRequest, bcache, (Class<Object>) class1, this.paseUtil, bzip,
 				showLoading);
 
-		Executor localExecutor = AsyncTask.THREAD_POOL_EXECUTOR;
+		Executor localExecutor = (ExecutorService) Executors.newFixedThreadPool(1);//AsyncTask.THREAD_POOL_EXECUTOR;
 		RequestMethod[] arrayOfRequestMethod = { RequestMethod.GET };
 		this.httpTask.executeOnExecutor(localExecutor, arrayOfRequestMethod);
 		if (this.controlcurrentThread != null) {
